@@ -6,8 +6,11 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\HomeController;
 
-Route::get('/', function () {
+Route::get('/', [HomeController::class, 'index']);
+
+Route::get('/welcome', function () {
     return view('welcome');
 });
 
@@ -37,4 +40,4 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('orders', OrderController::class);
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
