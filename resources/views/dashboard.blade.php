@@ -14,7 +14,7 @@
 
                     <ul class="list-disc pl-5 space-y-2">
                         <li>
-                            <a href="{{ route('categories.index') }}" class="text-blue-500 hover:underline">Kelola Kategori</a>
+                            <a href="{{ route('categories.index') }}" class="text-blue-500 hover:underline">Kategori Produk</a>
                         </li>
                         <li>
                             <a href="{{ route('products.index') }}" class="text-blue-500 hover:underline">Kelola Produk</a>

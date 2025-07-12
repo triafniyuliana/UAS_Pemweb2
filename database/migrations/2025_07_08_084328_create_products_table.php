@@ -13,13 +13,15 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('category_id')->constrained()->onDelete('cascade');
-            $table->foreignId('store_id')->constrained()->onDelete('cascade');
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2);
-            $table->integer('stock');
-            $table->boolean('is_active')->default(true); 
+            $table->string('image')->nullable();
+            $table->boolean('status')->default(true); // internal aktif/nonaktif
+            $table->boolean('is_visible')->default(true); // untuk tampil di hub
+            $table->bigInteger('hub_product_id')->nullable(); // untuk sinkron hub
+            $table->unsignedBigInteger('category_id');
+            $table->unsignedBigInteger('store_id');
             $table->timestamps();
         });
     }

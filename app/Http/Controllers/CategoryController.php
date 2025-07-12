@@ -23,12 +23,13 @@ class CategoryController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:255',
         ]);
 
         Category::create([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
-            'is_active' => $request->is_active ?? true,
+            'description' => $request->description,
         ]);
 
         return redirect()->route('categories.index')->with('success', 'Kategori berhasil ditambahkan.');
@@ -43,12 +44,13 @@ class CategoryController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:255',
         ]);
 
         $category->update([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
-            'is_active' => $request->is_active ?? true,
+            'description' => $request->description,
         ]);
 
         return redirect()->route('categories.index')->with('success', 'Kategori berhasil diperbarui.');

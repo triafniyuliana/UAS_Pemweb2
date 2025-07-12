@@ -7,19 +7,16 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
 
-// Login manual (jika kamu pakai LoginController sendiri)
-Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
-
-// Halaman awal
 Route::get('/', function () {
     return view('welcome');
 });
 
-// Dashboard setelah login
+// Login manual
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [LoginController::class, 'login']);
+
 Route::middleware(['auth'])->group(function () {
 
-    // Dashboard halaman utama
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->middleware(['verified'])->name('dashboard');
@@ -29,15 +26,15 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // CRUD Kategori
+    // CRUD 
     Route::resource('categories', CategoryController::class);
-
-    // CRUD Produk
     Route::resource('products', ProductController::class);
 
-    // CRUD Pesanan
+    // ATAU (kalau pakai default Laravel)
+    // Route::resource('categories', CategoryController::class);
+    // Route::resource('products', ProductController::class);
+
     Route::resource('orders', OrderController::class);
 });
 
-// Otentikasi default Laravel Breeze
 require __DIR__.'/auth.php';

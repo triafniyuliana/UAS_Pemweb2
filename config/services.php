@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'hub' => [
+        'base_url' => env('HUB_API_URL'),
+        'token' => env('HUB_API_TOKEN'),
+    ],
+
 ];
