@@ -17,13 +17,10 @@
                             <a href="{{ route('categories.index') }}" class="text-blue-500 hover:underline">Kategori Produk</a>
                         </li>
                         <li>
-                            <a href="{{ route('products.index') }}" class="text-blue-500 hover:underline">Kelola Produk</a>
+                            <a href="{{ route('products.index') }}" class="text-blue-500 hover:underline">Daftar Produk</a>
                         </li>
                         <li>
                             <a href="{{ route('orders.index') }}" class="text-blue-500 hover:underline">Lihat Pesanan Masuk</a>
-                        </li>
-                        <li>
-                            <a href="{{ route('dashboard') }}" class="text-blue-500 hover:underline">Sinkronisasi ke Hub</a>
                         </li>
                     </ul>
                 </div>

@@ -6,8 +6,8 @@ use App\Http\Controllers\SyncHubController;
 use App\Http\Controllers\ProductController;
 
 Route::post('webhook/orders', [OrderController::class, 'receiveOrderFromHub']);
-Route::post('sync/category/{id}', [SyncHubController::class, 'syncCategory']);
-Route::post('sync/product/{id}', [SyncHubController::class, 'syncProduct']);
+// Route::post('sync/category/{id}', [SyncHubController::class, 'syncCategory']);
+// Route::post('sync/product/{id}', [SyncHubController::class, 'syncProduct']);
 
 Route::middleware('auth')->group(function () {
     Route::put('/products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility']);

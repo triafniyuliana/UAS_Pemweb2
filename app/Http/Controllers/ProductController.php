@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
 
-
 class ProductController extends Controller
 {
     protected $hubApiService;
@@ -110,6 +109,9 @@ class ProductController extends Controller
             'stock' => $product->stock,
             'category_id' => $product->category->hub_category_id ?? null, // Pastikan kategori juga disinkronkan dan punya ID Hub
             'is_visible' => $product->is_visible,
+            'sku' => $product->sku,
+            'image_url' => $product->image_url,
+            'weight' => $product->weight,
             // ... tambahkan data lain yang dibutuhkan Hub
         ];
         try {
@@ -146,41 +148,41 @@ class ProductController extends Controller
     /**
      * Metode untuk menghapus produk dari Hub.
      */
-    // public function deleteProductFromHub(Request $request, Product $product)
-    // {
-    //     if (empty($product->hub_product_id)) {
-    //         return response()->json(['message' => 'Product ID in Hub is missing. Nothing to delete from Hub.'], 400);
-    //     }
-    //     try {
-    //         DB::beginTransaction();
-    //         $hubResponse = $this->hubApiService->deleteProduct($product->hub_product_id);
-    //         // Opsional: Hapus hub_product_id dari lokal jika produk hanya disembunyikan
-    //         // atau hapus produk lokal jika ini adalah full delete.
-    //         $product->hub_product_id = null; // Contoh: Hapus referensi Hub ID
-    //         $product->save();
-    //         DB::commit();
-    //         return response()->json([
-    //             'message' => 'Product deleted from Hub successfully.',
-    //             'hub_response' => $hubResponse
-    //         ]);
-    //     } catch (\GuzzleHttp\Exception\ClientException $e) {
-    //         DB::rollBack();
-    //         $statusCode = $e->getCode();
-    //         $responseBody = json_decode($e->getResponse()->getBody(), true);
-    //         Log::error("API Hub Client Error during delete: " . $e->getMessage() . " Response: " . json_encode($responseBody));
-    //         return response()->json(
-    //             [
-    //                 'message' => 'Error from Hub API during delete: ' . ($responseBody['message'] ?? 'Unknown error'),
-    //                 'status' => $statusCode
-    //             ],
-    //             $statusCode
-    //         );
-    //     } catch (\Exception $e) {
-    //         DB::rollBack();
-    //         Log::error("Failed to delete product from Hub: " . $e->getMessage());
-    //         return response()->json(['message' => 'Failed to delete product from Hub. ' . $e->getMessage()], 500);
-    //     }
-    // }
+    public function deleteProductFromHub(Request $request, Product $product)
+    {
+        if (empty($product->hub_product_id)) {
+            return response()->json(['message' => 'Product ID in Hub is missing. Nothing to delete from Hub.'], 400);
+        }
+        try {
+            DB::beginTransaction();
+            $hubResponse = $this->hubApiService->deleteProduct($product->hub_product_id);
+            // Opsional: Hapus hub_product_id dari lokal jika produk hanya disembunyikan
+            // atau hapus produk lokal jika ini adalah full delete.
+            $product->hub_product_id = null; // Contoh: Hapus referensi Hub ID
+            $product->save();
+            DB::commit();
+            return response()->json([
+                'message' => 'Product deleted from Hub successfully.',
+                'hub_response' => $hubResponse
+            ]);
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+            DB::rollBack();
+            $statusCode = $e->getCode();
+            $responseBody = json_decode($e->getResponse()->getBody(), true);
+            Log::error("API Hub Client Error during delete: " . $e->getMessage() . " Response: " . json_encode($responseBody));
+            return response()->json(
+                [
+                    'message' => 'Error from Hub API during delete: ' . ($responseBody['message'] ?? 'Unknown error'),
+                    'status' => $statusCode
+                ],
+                $statusCode
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Failed to delete product from Hub: " . $e->getMessage());
+            return response()->json(['message' => 'Failed to delete product from Hub. ' . $e->getMessage()], 500);
+        }
+    }
 
     // // ... metode lain untuk manajemen produk (index, store, update, destroy)
     // public function index()

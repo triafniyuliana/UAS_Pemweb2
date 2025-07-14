@@ -10,9 +10,13 @@
 
             {{-- Gambar --}}
             <div>
-                <img src="{{ asset('storage/' . $product->image) }}"
-                     alt="{{ $product->name }}"
-                     class="w-full h-auto rounded shadow">
+                @if ($product->image_url)
+                <img src="{{ $product->image_url }}"
+                    alt="{{ $product->name }}"
+                    class="w-full h-auto rounded shadow">
+                @else
+                <div class="text-gray-400 italic">Tidak ada gambar</div>
+                @endif
             </div>
 
             {{-- Informasi Produk --}}
@@ -26,13 +30,13 @@
                 </p>
 
                 @if ($product->stock > 0)
-                    <p class="text-green-600 dark:text-green-400 font-medium mb-3">
-                        Stok: {{ $product->stock }}
-                    </p>
+                <p class="text-green-600 dark:text-green-400 font-medium mb-3">
+                    Stok: {{ $product->stock }}
+                </p>
                 @else
-                    <p class="text-red-600 dark:text-red-400 font-medium mb-3">
-                        Stok Habis
-                    </p>
+                <p class="text-red-600 dark:text-red-400 font-medium mb-3">
+                    Stok Habis
+                </p>
                 @endif
 
                 <p class="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
@@ -40,7 +44,7 @@
                 </p>
 
                 <a href="{{ route('store.index') }}"
-                   class="inline-block text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                    class="inline-block text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
                     ← Kembali ke Toko
                 </a>
             </div>
