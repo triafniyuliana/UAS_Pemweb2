@@ -12,11 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('categories', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');
-        $table->string('slug')->unique();
-        $table->string('description')->nullable();
-        $table->timestamps();
+            $table->id();
+            $table->string('name');
+            $table->string('slug')->unique();
+            $table->text('description')->nullable(); // Tambahkan ini!
+            $table->boolean('is_visible')->default(true);
+            $table->unsignedBigInteger('hub_category_id')->nullable();
+            $table->timestamps();
         });
     }
 

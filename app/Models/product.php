@@ -9,17 +9,18 @@ class Product extends Model
 {
     use HasFactory;
 
-    // Jika kamu ingin mass-assignment (create/update) bisa langsung
     protected $fillable = [
         'name',
+        'slug',
         'description',
-        'price',
-        'image',
-        'status',
-        'is_visible',
-        'hub_product_id',
         'category_id',
-        'store_id',
+        'price',
+        'stock',
+        'sku',             
+        'image_url',       
+        'weight',  
+        'is_visible',
+        'hub_product_id'
     ];
 
     /**
@@ -28,13 +29,5 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
-    }
-
-    /**
-     * Relasi ke toko (opsional jika kamu punya model Store)
-     */
-    public function store()
-    {
-        return $this->belongsTo(Store::class);
     }
 }

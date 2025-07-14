@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product; // Asumsi model produk Anda
-use App\Services\HubApiService;
 use Illuminate\Http\Request;
+use App\Models\Product;
+use App\Models\Category;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use App\Services\HubApiService;
 use Illuminate\Support\Facades\DB; // Untuk transaksi database
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+
 
 
 class ProductController extends Controller
@@ -16,6 +21,14 @@ class ProductController extends Controller
     {
         $this->hubApiService = $hubApiService;
     }
+
+    public function index()
+    {
+        $products = Product::with('category')->get();
+        return view('products.index', compact('products'));
+    }
+
+
     /**
      * Mengatur visibilitas produk (On/Off) di Hub.
      */
@@ -82,6 +95,7 @@ class ProductController extends Controller
             );
         }
     }
+
     /**
      * Metode untuk sinkronisasi awal atau membuat produk baru di Hub
      * Ini penting agar produk memiliki hub_product_id sebelum bisa di-toggle visibilitasnya.
@@ -128,109 +142,185 @@ class ProductController extends Controller
             return response()->json(['message' => 'Failed to sync product to Hub. ' . $e->getMessage()], 500);
         }
     }
+
     /**
      * Metode untuk menghapus produk dari Hub.
      */
-    public function deleteProductFromHub(Request $request, Product $product)
+    // public function deleteProductFromHub(Request $request, Product $product)
+    // {
+    //     if (empty($product->hub_product_id)) {
+    //         return response()->json(['message' => 'Product ID in Hub is missing. Nothing to delete from Hub.'], 400);
+    //     }
+    //     try {
+    //         DB::beginTransaction();
+    //         $hubResponse = $this->hubApiService->deleteProduct($product->hub_product_id);
+    //         // Opsional: Hapus hub_product_id dari lokal jika produk hanya disembunyikan
+    //         // atau hapus produk lokal jika ini adalah full delete.
+    //         $product->hub_product_id = null; // Contoh: Hapus referensi Hub ID
+    //         $product->save();
+    //         DB::commit();
+    //         return response()->json([
+    //             'message' => 'Product deleted from Hub successfully.',
+    //             'hub_response' => $hubResponse
+    //         ]);
+    //     } catch (\GuzzleHttp\Exception\ClientException $e) {
+    //         DB::rollBack();
+    //         $statusCode = $e->getCode();
+    //         $responseBody = json_decode($e->getResponse()->getBody(), true);
+    //         Log::error("API Hub Client Error during delete: " . $e->getMessage() . " Response: " . json_encode($responseBody));
+    //         return response()->json(
+    //             [
+    //                 'message' => 'Error from Hub API during delete: ' . ($responseBody['message'] ?? 'Unknown error'),
+    //                 'status' => $statusCode
+    //             ],
+    //             $statusCode
+    //         );
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         Log::error("Failed to delete product from Hub: " . $e->getMessage());
+    //         return response()->json(['message' => 'Failed to delete product from Hub. ' . $e->getMessage()], 500);
+    //     }
+    // }
+
+    // // ... metode lain untuk manajemen produk (index, store, update, destroy)
+    // public function index()
+    // {
+    //     $products = Product::with('category')->get();
+    //     return view('products.index', compact('products'));
+    // }
+
+    // public function create()
+    // {
+    //     $categories = Category::all();
+    //     return view('products.create', compact('categories'));
+    // }
+
+    public function sync($id, Request $request)
     {
-        if (empty($product->hub_product_id)) {
-            return response()->json(['message' => 'Product ID in Hub is missing. Nothing to delete from Hub.'], 400);
-        }
-        try {
-            DB::beginTransaction();
-            $hubResponse = $this->hubApiService->deleteProduct($product->hub_product_id);
-            // Opsional: Hapus hub_product_id dari lokal jika produk hanya disembunyikan
-            // atau hapus produk lokal jika ini adalah full delete.
-            $product->hub_product_id = null; // Contoh: Hapus referensi Hub ID
+        $product = Product::findOrFail($id);
+
+        $response = Http::post('https://api.phb-umkm.my.id/api/product/sync', [
+            'client_id' => env('CLIENT_ID'),
+            'client_secret' => env('CLIENT_SECRET'),
+            'seller_product_id' => (string) $product->id,
+            'name' => $product->name,
+            'description' => $product->description,
+            'price' => $product->price,
+            'stock' => $product->stock,
+            'sku' => $product->sku,
+            'image_url' => $product->image_url,
+            'weight' => $product->weight,
+            'is_active' => $request->is_active == 1 ? false : true,
+            'category_id' => (string) $product->category->hub_category_id,
+        ]);
+
+        if ($response->successful() && isset($response['product_id'])) {
+            $product->hub_product_id = $request->is_active == 1 ? null : $response['product_id'];
             $product->save();
-            DB::commit();
-            return response()->json([
-                'message' => 'Product deleted from Hub successfully.',
-                'hub_response' => $hubResponse
-            ]);
-        } catch (\GuzzleHttp\Exception\ClientException $e) {
-            DB::rollBack();
-            $statusCode = $e->getCode();
-            $responseBody = json_decode($e->getResponse()->getBody(), true);
-            Log::error("API Hub Client Error during delete: " . $e->getMessage() . " Response: " . json_encode($responseBody));
-            return response()->json(
-                [
-                    'message' => 'Error from Hub API during delete: ' . ($responseBody['message'] ?? 'Unknown error'),
-                    'status' => $statusCode
-                ],
-                $statusCode
-            );
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error("Failed to delete product from Hub: " . $e->getMessage());
-            return response()->json(['message' => 'Failed to delete product from Hub. ' . $e->getMessage()], 500);
         }
-    }
-    /**
-     * Metode untuk menampilkan daftar produk.
-     */
-    public function index()
-    {
-        $products = Product::with('category')->get();
-        return view('products.index', compact('products'));
+
+        session()->flash('successMessage', 'Product Synced Successfully');
+        return redirect()->back();
     }
 
     public function create()
     {
-        return view('products.create');
+        $categories = Category::all();
+        return view('products.create', compact('categories'));
     }
+
 
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string',
+            'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price' => 'required|numeric',
-            'image' => 'nullable|image|max:2048',
-            'status' => 'boolean',
             'category_id' => 'required|exists:categories,id',
-            'store_id' => 'required|exists:stores,id',
+            'price'       => 'required|integer|min:0',
+            'stock'       => 'required|integer|min:0',
+            'sku'         => 'nullable|string|max:255',
+            'weight'      => 'nullable|numeric',
+            'image'       => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $data = $request->all();
+        $imagePath = null;
+        $imageUrl = null;
 
-        // Simpan gambar jika diunggah
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('images', 'public');
+            $imagePath = $request->file('image')->store('products', 'public');
+            $imageUrl = asset('storage/' . $imagePath);
         }
 
-        Product::create($data);
+        Product::create([
+            'name'        => $request->name,
+            'slug'        => Str::slug($request->name),
+            'description' => $request->description,
+            'category_id' => $request->category_id,
+            'price'       => $request->price,
+            'stock'       => $request->stock,
+            'sku'         => $request->sku,
+            'weight'      => $request->weight,
+            'image_url'   => $imageUrl,
+            'is_visible'  => $request->has('is_visible'),
+        ]);
 
         return redirect()->route('products.index')->with('success', 'Produk berhasil ditambahkan.');
     }
 
     public function edit(Product $product)
     {
-        return view('products.edit', compact('product'));
+        $categories = Category::all();
+        return view('products.edit', compact('product', 'categories'));
     }
 
     public function update(Request $request, Product $product)
     {
         $request->validate([
-            'name' => 'required|string',
+            'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price' => 'required|numeric',
-            'image' => 'nullable|image|max:2048',
-            'status' => 'boolean',
             'category_id' => 'required|exists:categories,id',
-            'store_id' => 'required|exists:stores,id',
+            'price'       => 'required|integer|min:0',
+            'stock'       => 'required|integer|min:0',
+            'sku'         => 'nullable|string|max:255',
+            'weight'      => 'nullable|numeric',
+            'image'       => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $data = $request->all();
+        $imageUrl = $product->image_url;
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('images', 'public');
+            if ($product->image_url) {
+                $oldImage = str_replace(asset('storage/'), '', $product->image_url);
+                Storage::disk('public')->delete($oldImage);
+            }
+            $imagePath = $request->file('image')->store('products', 'public');
+            $imageUrl = asset('storage/' . $imagePath);
         }
 
-        $product->update($data);
+        $product->update([
+            'name'        => $request->name,
+            'slug'        => Str::slug($request->name),
+            'description' => $request->description,
+            'category_id' => $request->category_id,
+            'price'       => $request->price,
+            'stock'       => $request->stock,
+            'sku'         => $request->sku,
+            'weight'      => $request->weight,
+            'image_url'   => $imageUrl,
+            'is_visible'  => $request->has('is_visible'),
+        ]);
 
         return redirect()->route('products.index')->with('success', 'Produk berhasil diperbarui.');
     }
 
-    // ... metode lain untuk manajemen produk (index, store, update, destroy)
+    public function destroy(Product $product)
+    {
+        if ($product->image_url) {
+            $imageFile = str_replace(asset('storage/'), '', $product->image_url);
+            Storage::disk('public')->delete($imageFile);
+        }
+
+        $product->delete();
+        return redirect()->route('products.index')->with('success', 'Produk berhasil dihapus.');
+    }
 }

@@ -5,148 +5,93 @@
         </h2>
     </x-slot>
 
-    <div class="container mx-auto p-4">
-        <h1 class="text-2xl font-bold mb-4">Daftar Produk</h1>
+    <div class="py-6">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-        @if (session('success'))
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            @if(session('success'))
+            <div class="mb-4 p-4 bg-green-100 text-green-800 rounded">
                 {{ session('success') }}
             </div>
-        @endif
+            @endif
 
-        @if (session('error'))
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                {{ session('error') }}
-            </div>
-        @endif
+            <a href="{{ route('products.create') }}" class="inline-block mb-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                + Tambah Produk
+            </a>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full bg-white shadow-md rounded-lg">
-                <thead class="bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    <tr>
-                        <th class="py-2 px-4 border-b">Nama Produk</th>
-                        <th class="py-2 px-4 border-b">Harga</th>
-                        <th class="py-2 px-4 border-b">Visibilitas</th>
-                        <th class="py-2 px-4 border-b">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($products as $product)
-                    <tr class="hover:bg-gray-50">
-                        <td class="py-3 px-4 border-b">{{ $product->name }}</td>
-                        <td class="py-3 px-4 border-b">Rp{{ number_format($product->price, 0, ',', '.') }}</td>
-                        <td class="py-3 px-4 border-b">
-                            @if ($product->hub_product_id)
-                                <div x-data="{
-                                    isOn: {{ $product->is_visible ? 'true' : 'false' }},
-                                    toggleVisibility() {
-                                        const url = `/api/products/{{ $product->id }}/toggle-visibility`;
-                                        const csrfToken = document.querySelector('meta[name=csrf-token]').getAttribute('content');
-                                        fetch(url, {
-                                            method: 'PUT',
-                                            headers: {
-                                                'Content-Type': 'application/json',
-                                                'Accept': 'application/json',
-                                                'X-CSRF-TOKEN': csrfToken
-                                            },
-                                            body: JSON.stringify({ is_on: this.isOn })
-                                        })
-                                        .then(response => response.json())
-                                        .then(data => {
-                                            alert(data.message);
-                                        })
-                                        .catch(error => {
-                                            console.error(error);
-                                            alert('Gagal mengubah visibilitas.');
-                                            this.isOn = !this.isOn;
-                                        });
-                                    }
-                                }">
-                                    <button
-                                        @click="isOn = !isOn; toggleVisibility()"
-                                        :class="isOn ? 'bg-green-500' : 'bg-gray-300'"
-                                        class="relative inline-flex h-6 w-11 items-center rounded-full transition">
-                                        <span
-                                            :class="isOn ? 'translate-x-6' : 'translate-x-1'"
-                                            class="inline-block h-4 w-4 transform rounded-full bg-white transition"></span>
-                                    </button>
-                                </div>
-                            @else
-                                <span class="text-red-500 text-xs">Belum Disinkronkan</span>
-                            @endif
-                        </td>
-                        <td class="py-3 px-4 border-b space-x-2">
-                            @if (!$product->hub_product_id)
-                                <button
-                                    x-data
-                                    @click="
-                                        fetch(`/api/products/{{ $product->id }}/sync-to-hub`, {
-                                            method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/json',
-                                                'Accept': 'application/json',
-                                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')
-                                            },
-                                            body: JSON.stringify({})
-                                        })
-                                        .then(res => res.json())
-                                        .then(data => {
-                                            alert(data.message);
-                                            location.reload();
-                                        })
-                                        .catch(err => {
-                                            alert('Gagal sinkronisasi.');
-                                            console.error(err);
-                                        });
-                                    "
-                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs">
-                                    Sinkronkan
-                                </button>
-                            @else
-                                <button
-                                    x-data
-                                    @click="
-                                        if (!confirm('Yakin ingin menghapus produk dari Hub?')) return;
-                                        fetch(`/api/products/{{ $product->id }}/delete-from-hub`, {
-                                            method: 'DELETE',
-                                            headers: {
-                                                'Content-Type': 'application/json',
-                                                'Accept': 'application/json',
-                                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')
-                                            }
-                                        })
-                                        .then(res => res.json())
-                                        .then(data => {
-                                            alert(data.message);
-                                            location.reload();
-                                        })
-                                        .catch(err => {
-                                            alert('Gagal menghapus dari Hub.');
-                                            console.error(err);
-                                        });
-                                    "
-                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">
-                                    Hapus dari Hub
-                                </button>
-                            @endif
-
-                            <a href="{{ route('products.edit', $product->id) }}"
-                               class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs">
-                                Edit
-                            </a>
-                        </td>
-                    </tr>
-                    @endforeach
-
-                    @if ($products->isEmpty())
+            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg overflow-x-auto">
+                <table class="min-w-full text-sm text-gray-700 dark:text-gray-200">
+                    <thead class="bg-gray-200 dark:bg-gray-700 text-xs uppercase">
                         <tr>
-                            <td colspan="4" class="py-4 px-4 text-center text-gray-500">
-                                Tidak ada produk.
+                            <th class="px-4 py-3 text-left">No</th>
+                            <th class="px-4 py-3 text-left">Gambar</th>
+                            <th class="px-4 py-3 text-left">Nama</th>
+                            <th class="px-4 py-3 text-left">Deskripsi</th>
+                            <th class="px-4 py-3 text-left">SKU</th>
+                            <th class="px-4 py-3 text-left">Stok</th>
+                            <th class="px-4 py-3 text-left">Harga</th>
+                            <th class="px-4 py-3 text-left">Berat</th>
+                            <th class="px-4 py-3 text-left">Status</th>
+                            <th class="px-4 py-3 text-left">Sinkronisasi</th>
+                            <th class="px-4 py-3 text-left">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                        @forelse($products as $product)
+                        <tr>
+                            <td class="px-4 py-2">{{ $loop->iteration }}</td>
+                            <td class="px-4 py-2">
+                                @if ($product->image_url)
+                                <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
+                                    class="w-24 h-24 object-cover rounded">
+                                @else
+                                <div class="w-24 h-24 bg-gray-200 flex items-center justify-center text-gray-500 rounded">
+                                    Tidak ada gambar
+                                </div>
+                                @endif
+
+                            </td>
+                            <td class="px-4 py-2">{{ $product->name }}</td>
+                            <td class="px-4 py-2">{{ Str::limit($product->description, 50) }}</td>
+                            <td class="px-4 py-2">{{ $product->sku ?? '-' }}</td>
+                            <td class="px-4 py-2">{{ $product->stock }}</td>
+                            <td class="px-4 py-2">Rp{{ number_format($product->price, 0, ',', '.') }}</td>
+                            <td class="px-4 py-2">{{ $product->weight ?? '-' }} gram</td>
+                            <td class="px-4 py-2">
+                                @if ($product->is_visible)
+                                <span class="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Tampil</span>
+                                @else
+                                <span class="px-2 py-1 text-xs font-semibold bg-gray-300 text-gray-800 rounded-full">Disembunyikan</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-2">
+                                <form id="sync-product-{{ $product->id }}" action="{{ route('products.sync', $product->id) }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="is_active" value="{{ $product->hub_product_id ? 1 : 0 }}">
+                                    @if($product->hub_product_id)
+                                    <flux:switch checked onchange="document.getElementById('sync-product-{{ $product->id }}').submit()" />
+                                    @else
+                                    <flux:switch onchange="document.getElementById('sync-product-{{ $product->id }}').submit()" />
+                                    @endif
+                                </form>
+                            </td>
+                            <td class="px-4 py-2">
+                                <a href="{{ route('products.edit', $product->id) }}" class="text-blue-600 hover:underline mr-2">Edit</a>
+                                <form action="{{ route('products.destroy', $product->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:underline">Hapus</button>
+                                </form>
                             </td>
                         </tr>
-                    @endif
-                </tbody>
-            </table>
+                        @empty
+                        <tr>
+                            <td colspan="11" class="text-center py-3 text-gray-500">Belum ada produk.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
         </div>
     </div>
 </x-app-layout>

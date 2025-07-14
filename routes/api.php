@@ -10,8 +10,7 @@ Route::post('sync/category/{id}', [SyncHubController::class, 'syncCategory']);
 Route::post('sync/product/{id}', [SyncHubController::class, 'syncProduct']);
 
 Route::middleware('auth')->group(function () {
-    Route::get('/products', [ProductController::class, 'index']);
-    Route::post('/products/{product}/sync-to-hub', [ProductController::class, 'syncProductToHub']);
     Route::put('/products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility']);
+    Route::post('/products/{product}/sync-to-hub', [ProductController::class, 'syncProductToHub']);
     Route::delete('/products/{product}/delete-from-hub', [ProductController::class, 'deleteProductFromHub']);
 });

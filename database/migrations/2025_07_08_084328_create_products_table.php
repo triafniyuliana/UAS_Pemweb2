@@ -14,14 +14,16 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('slug')->unique();
             $table->text('description')->nullable();
-            $table->decimal('price', 10, 2);
-            $table->string('image')->nullable();
-            $table->boolean('status')->default(true); // internal aktif/nonaktif
-            $table->boolean('is_visible')->default(true); // untuk tampil di hub
-            $table->bigInteger('hub_product_id')->nullable(); // untuk sinkron hub
-            $table->unsignedBigInteger('category_id');
-            $table->unsignedBigInteger('store_id');
+            $table->unsignedBigInteger('category_id')->nullable();
+            $table->integer('price');
+            $table->integer('stock');
+            $table->string('sku')->nullable();
+            $table->string('image_url')->nullable(); 
+            $table->decimal('weight', 8, 2)->nullable();
+            $table->boolean('is_visible')->default(true);
+            $table->unsignedBigInteger('hub_product_id')->nullable();
             $table->timestamps();
         });
     }

@@ -12,7 +12,8 @@ class category extends Model
     protected $fillable = [
         'name',
         'slug',
-        'description',
+        'is_visible', 
+        'hub_category_id'
     ];
 
     public function products()
