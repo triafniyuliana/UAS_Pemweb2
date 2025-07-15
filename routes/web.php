@@ -68,6 +68,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
 });
 
+
 // ------------------------------
 // Autentikasi Laravel (register, dll)
 // ------------------------------

@@ -6,11 +6,11 @@ use App\Http\Controllers\SyncHubController;
 use App\Http\Controllers\ProductController;
 
 Route::post('webhook/orders', [OrderController::class, 'receiveOrderFromHub']);
-// Route::post('sync/category/{id}', [SyncHubController::class, 'syncCategory']);
-// Route::post('sync/product/{id}', [SyncHubController::class, 'syncProduct']);
+
+Route::put('/products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility']);
+Route::post('/products/{product}/sync-to-hub', [ProductController::class, 'syncProductToHub'])->name('products.sync.tohub');
+Route::delete('/products/{product}/delete-from-hub', [ProductController::class, 'deleteProductFromHub']);
 
 Route::middleware('auth')->group(function () {
-    Route::put('/products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility']);
-    Route::post('/products/{product}/sync-to-hub', [ProductController::class, 'syncProductToHub']);
-    Route::delete('/products/{product}/delete-from-hub', [ProductController::class, 'deleteProductFromHub']);
+    // tambahkan route lain yang butuh auth di sini jika perlu
 });

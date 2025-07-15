@@ -21,119 +21,104 @@ class HubApiService
             'base_uri' => $this->baseUrl,
             'headers' => [
                 'Accept' => 'application/json',
-                // Anda mungkin perlu menambahkan header otorisasi di sini setelah mendapatkan token
             ],
-            'verify' => false, // Set false jika menggunakan localhost atau self-signed certs, HANYA untuk development!
+            'verify' => false, // Hanya untuk pengembangan lokal
         ]);
     }
 
     /**
-     * Mendapatkan token akses dari Hub menggunakan Client Credentials Grant.
-     * Token ini akan digunakan untuk otentikasi API ke Hub.
+     * Mendapatkan token akses dari Hub.
      */
     public function getAccessToken()
     {
         try {
-            $response = $this->client->post('oauth/token', [ // Pastikan endpoint ini sesuai dengan Hub
+            $response = $this->client->post('oauth/token', [
                 'form_params' => [
                     'grant_type' => 'client_credentials',
                     'client_id' => $this->clientId,
                     'client_secret' => $this->clientSecret,
-                    'scope' => '*', // Sesuaikan scope yang dibutuhkan Hub
+                    'scope' => '*',
                 ],
             ]);
+
             $data = json_decode((string) $response->getBody(), true);
-            return $data['access_token'];
+            return $data['access_token'] ?? null;
         } catch (\Exception $e) {
             Log::error('Gagal mendapatkan token akses dari Hub: ' . $e->getMessage());
-            return null;
+            throw new \Exception('Tidak bisa mendapatkan token akses dari Hub');
         }
     }
 
     /**
-     * Mengirim permintaan PUT/PATCH ke Hub untuk mengupdate status produk.
-     *
-     * @param int $productId ID produk di Hub
-     * @param array $data Data yang akan diupdate (misal: ['is_visible' => true/false])
-     * @return mixed Respon dari Hub
+     * Update visibilitas produk di Hub.
      */
     public function updateProductVisibility($productId, array $data)
     {
         $accessToken = $this->getAccessToken();
-        if (!$accessToken) {
-            return response()->json(['message' => 'Failed to get access token from Hub'], 500);
-        }
+
         try {
-            $response = $this->client->put("products/{$productId}/visibility", [ // Sesuaikan endpoint Hub
+            $response = $this->client->put("products/{$productId}/visibility", [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $accessToken,
                 ],
                 'json' => $data,
             ]);
+
             return json_decode((string) $response->getBody(), true);
         } catch (\GuzzleHttp\Exception\ClientException $e) {
-            Log::error('Client Error saat update visibilitas produk di Hub: ' . $e->getMessage() . ' Response: ' .
-                $e->getResponse()->getBody());
-            throw $e; // Lempar exception agar bisa ditangkap di controller
+            Log::error('Client Error saat update visibilitas: ' . $e->getMessage());
+            throw $e;
         } catch (\Exception $e) {
-            Log::error('Error saat update visibilitas produk di Hub: ' . $e->getMessage());
+            Log::error('Gagal update visibilitas produk: ' . $e->getMessage());
             throw $e;
         }
     }
 
     /**
-     * Mengirim permintaan POST ke Hub untuk membuat produk baru.
-     * @param array $data Data produk baru
-     * @return mixed Respon dari Hub
+     * Sinkron produk ke Hub.
      */
     public function createProduct($data)
     {
         $accessToken = $this->getAccessToken();
-        if (!$accessToken) {
-            return response()->json(['message' => 'Failed to get access token from Hub'], 500);
-        }
+
         try {
-            $response = $this->client->post("products", [ // Sesuaikan endpoint Hub
+            $response = $this->client->post('products', [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $accessToken,
                 ],
                 'json' => $data,
             ]);
+
             return json_decode((string) $response->getBody(), true);
         } catch (\GuzzleHttp\Exception\ClientException $e) {
-            Log::error('Client Error saat membuat produk di Hub: ' . $e->getMessage() . ' Response: ' .
-                $e->getResponse()->getBody());
+            Log::error('Client Error saat membuat produk: ' . $e->getMessage());
             throw $e;
         } catch (\Exception $e) {
-            Log::error('Error saat membuat produk di Hub: ' . $e->getMessage());
+            Log::error('Gagal membuat produk di Hub: ' . $e->getMessage());
             throw $e;
         }
     }
 
     /**
-     * Mengirim permintaan DELETE ke Hub untuk menghapus produk.
-     * @param int $productId ID produk di Hub
-     * @return mixed Respon dari Hub
+     * Hapus produk dari Hub.
      */
     public function deleteProduct($productId)
     {
         $accessToken = $this->getAccessToken();
-        if (!$accessToken) {
-            return response()->json(['message' => 'Failed to get access token from Hub'], 500);
-        }
+
         try {
-            $response = $this->client->delete("products/{$productId}", [ // Sesuaikan endpoint Hub
+            $response = $this->client->delete("products/{$productId}", [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $accessToken,
                 ],
             ]);
+
             return json_decode((string) $response->getBody(), true);
         } catch (\GuzzleHttp\Exception\ClientException $e) {
-            Log::error('Client Error saat menghapus produk di Hub: ' . $e->getMessage() . ' Response: ' .
-                $e->getResponse()->getBody());
+            Log::error('Client Error saat hapus produk: ' . $e->getMessage());
             throw $e;
         } catch (\Exception $e) {
-            Log::error('Error saat menghapus produk di Hub: ' . $e->getMessage());
+            Log::error('Gagal hapus produk dari Hub: ' . $e->getMessage());
             throw $e;
         }
     }
