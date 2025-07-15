@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
@@ -16,9 +16,9 @@ class Product extends Model
         'category_id',
         'price',
         'stock',
-        'sku',
-        'image_url',
-        'weight',
+        'sku',             
+        'image_url',       
+        'weight',  
         'is_visible',
         'hub_product_id'
     ];
