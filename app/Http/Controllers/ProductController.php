@@ -117,9 +117,8 @@ class ProductController extends Controller
         try {
             DB::beginTransaction();
             $hubResponse = $this->hubApiService->createProduct($productData);
-            $data = $hubResponse->json();
-            $product->hub_product_id = $data['product_id'] ?? null;
-
+            // Simpan ID produk dari Hub ke database lokal Anda
+            $product->hub_product_id = $hubResponse['product_id']; // Sesuaikan dengan key response dari Hub
             $product->save();
             DB::commit();
             return response()->json([

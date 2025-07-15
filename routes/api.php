@@ -8,7 +8,7 @@ use App\Http\Controllers\ProductController;
 Route::post('webhook/orders', [OrderController::class, 'receiveOrderFromHub']);
 
 Route::put('/products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility']);
-Route::post('/products/{product}/sync-to-hub', [ProductController::class, 'syncProductToHub'])->name('products.sync.tohub');
+Route::post('/products/{product}/sync-to-hub', [ProductController::class, 'sync']); // ← Ganti ini
 Route::delete('/products/{product}/delete-from-hub', [ProductController::class, 'deleteProductFromHub']);
 
 Route::middleware('auth')->group(function () {

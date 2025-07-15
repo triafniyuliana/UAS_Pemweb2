@@ -25,6 +25,7 @@ Route::get('/cart/checkout', [CartController::class, 'showCheckoutForm'])->name(
 Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
 Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 
+
 // ------------------------------
 // Halaman Welcome (Opsional)
 // ------------------------------
