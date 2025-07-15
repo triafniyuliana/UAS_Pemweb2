@@ -6,8 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use Illuminate\Support\Str;
 use App\Models\Product;
-
-
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -16,6 +15,7 @@ class OrderController extends Controller
      */
     public function index()
     {
+        Log::info('Admin mengakses daftar pesanan');
         $orders = Order::with('product')->latest()->get();
         return view('orders.index', compact('orders'));
     }
@@ -32,7 +32,7 @@ class OrderController extends Controller
             'email'         => 'nullable|email',
             'quantity'      => 'required|integer|min:1',
             'total_price'   => 'required|numeric|min:0',
-            'status'        => 'nullable|string', // ex: pending, paid, shipped
+            'status'        => 'nullable|string',
             'address'       => 'nullable|string',
         ]);
 
@@ -47,11 +47,16 @@ class OrderController extends Controller
             'address'       => $data['address'] ?? null,
         ]);
 
+        Log::info('Pesanan diterima dari Hub', [
+            'order_id' => $data['order_id'],
+            'product_id' => $data['product_id'],
+        ]);
+
         return response()->json(['message' => 'Order received'], 201);
     }
 
     /**
-     * Update status pesanan (opsional)
+     * Update status pesanan
      */
     public function updateStatus(Request $request, Order $order)
     {
@@ -59,11 +64,19 @@ class OrderController extends Controller
             'status' => 'required|in:pending,paid,shipped,cancelled',
         ]);
 
+        $oldStatus = $order->status;
         $order->status = $request->status;
         $order->save();
 
+        Log::info('Status pesanan diperbarui', [
+            'order_id' => $order->order_id,
+            'dari' => $oldStatus,
+            'ke' => $request->status,
+        ]);
+
         return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui.');
     }
+
     /**
      * Simpan pesanan manual dari lokal
      */
@@ -77,10 +90,10 @@ class OrderController extends Controller
             'address' => 'nullable|string|max:500',
         ]);
 
-        $product = \App\Models\Product::findOrFail($data['product_id']);
+        $product = Product::findOrFail($data['product_id']);
         $total = $product->price * $data['quantity'];
 
-        Order::create([
+        $order = Order::create([
             'order_id' => 'LOCAL-' . strtoupper(Str::random(8)),
             'product_id' => $product->id,
             'customer_name' => $data['customer_name'],
@@ -89,6 +102,12 @@ class OrderController extends Controller
             'total_price' => $total,
             'status' => 'pending',
             'address' => $data['address'],
+        ]);
+
+        Log::info('Pesanan lokal disimpan', [
+            'order_id' => $order->order_id,
+            'product_id' => $order->product_id,
+            'customer' => $order->customer_name,
         ]);
 
         return redirect()->back()->with('success', 'Pesanan berhasil dikirim.');
