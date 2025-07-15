@@ -27,7 +27,7 @@ class StoreController extends Controller
         $products = $query->latest()->get();
         $categories = Category::all();
 
-        return view('store.index', compact('products', 'categories'));
+        return view('store.beranda', compact('products', 'categories'));
     }
 
 

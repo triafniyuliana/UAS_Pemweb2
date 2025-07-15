@@ -7,6 +7,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\StoreController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
 
 // ------------------------------
@@ -16,6 +17,13 @@ use App\Http\Controllers\HomeController;
 Route::get('/', [StoreController::class, 'index'])->name('store.index');
 Route::get('/produk/{slug}', [StoreController::class, 'show'])->name('store.show');
 Route::get('/kategori/{slug}', [StoreController::class, 'category'])->name('store.category');
+
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add/{id}', [CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+Route::get('/cart/checkout', [CartController::class, 'showCheckoutForm'])->name('cart.checkout.form');
+Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
+Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 
 // ------------------------------
 // Halaman Welcome (Opsional)
@@ -54,6 +62,10 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('products/sync/{id}', [ProductController::class, 'sync'])->name('products.sync');
     Route::post('category/sync/{id}', [CategoryController::class, 'sync'])->name('category.sync');
+
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::post('/orders/manual', [OrderController::class, 'storeFromLocal'])->name('orders.storeFromLocal');
+    Route::post('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
 });
 
 // ------------------------------
