@@ -8,14 +8,14 @@ use App\Models\Category;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Services\HubApiService;
-use Illuminate\Support\Facades\DB; // Untuk transaksi database
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
-
 
 class ProductController extends Controller
 {
     protected $hubApiService;
+
     public function __construct(HubApiService $hubApiService)
     {
         $this->hubApiService = $hubApiService;
@@ -27,46 +27,30 @@ class ProductController extends Controller
         return view('products.index', compact('products'));
     }
 
-
-    /**
-     * Mengatur visibilitas produk (On/Off) di Hub.
-     */
     public function toggleVisibility(Request $request, Product $product)
     {
         $request->validate([
             'is_on' => 'required|boolean',
         ]);
         $isOn = $request->input('is_on');
-        // Pastikan produk memiliki hub_product_id yang valid
+
         if (empty($product->hub_product_id)) {
-            return response()->json(
-                [
-                    'message' => 'Product ID in Hub is missing. Please sync product first.'
-                ],
-                400
-            );
+            return response()->json([
+                'message' => 'Product ID in Hub is missing. Please sync product first.'
+            ], 400);
         }
+
         try {
             DB::beginTransaction();
-            if ($isOn) {
-                // Jika On, update status visibilitas di Hub menjadi true
-                $hubResponse = $this->hubApiService->updateProductVisibility(
-                    $product->hub_product_id,
-                    ['is_visible' => true]
-                );
-                // Opsional: update status lokal jika diperlukan
-                $product->is_visible = true; // Asumsi ada kolom is_visible di tabel produk lokal
-            } else {
-                // Jika Off, update status visibilitas di Hub menjadi false
-                $hubResponse = $this->hubApiService->updateProductVisibility(
-                    $product->hub_product_id,
-                    ['is_visible' => false]
-                );
-                // Opsional: update status lokal jika diperlukan
-                $product->is_visible = false;
-            }
+            $hubResponse = $this->hubApiService->updateProductVisibility(
+                $product->hub_product_id,
+                ['is_visible' => $isOn]
+            );
+
+            $product->is_visible = $isOn;
             $product->save();
             DB::commit();
+
             return response()->json([
                 'message' => 'Product visibility updated successfully.',
                 'hub_response' => $hubResponse
@@ -76,91 +60,106 @@ class ProductController extends Controller
             $statusCode = $e->getCode();
             $responseBody = json_decode($e->getResponse()->getBody(), true);
             Log::error("API Hub Client Error: " . $e->getMessage() . " Response: " . json_encode($responseBody));
-            return response()->json(
-                [
-                    'message' => 'Error from Hub API: ' . ($responseBody['message'] ?? 'Unknown error'),
-                    'status' => $statusCode
-                ],
-                $statusCode
-            );
+            return response()->json([
+                'message' => 'Error from Hub API: ' . ($responseBody['message'] ?? 'Unknown error'),
+                'status' => $statusCode
+            ], $statusCode);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Failed to toggle product visibility: " . $e->getMessage());
-            return response()->json(
-                [
-                    'message' => 'Failed to toggle product visibility. ' . $e->getMessage()
-                ],
-                500
-            );
+            return response()->json([
+                'message' => 'Failed to toggle product visibility. ' . $e->getMessage()
+            ], 500);
         }
     }
 
-    /**
-     * Metode untuk sinkronisasi awal atau membuat produk baru di Hub
-     * Ini penting agar produk memiliki hub_product_id sebelum bisa di-toggle visibilitasnya.
-     */
-    public function syncProductToHub(Request $request, Product $product)
+    public function syncProductToHub($id)
     {
-        // Contoh data produk yang akan dikirim ke Hub. Sesuaikan dengan skema Hub.
-        $productData = [
+        $product = Product::findOrFail($id);
+
+        $response = Http::post(env('HUB_API_URL') . '/product/sync', [
+            'client_id'         => env('HUB_CLIENT_ID'),
+            'client_secret'     => env('HUB_CLIENT_SECRET'),
+            'seller_product_id' => $product->id,
+            'name'              => $product->name,
+            'description'       => $product->description,
+            'price'             => $product->price,
+            'stock'             => $product->stock,
+            'sku'               => $product->sku,
+            'image_url'         => $product->image_url,
+            'weight'            => $product->weight,
+            'is_active'         => true,
+            'category_id'       => $product->category->hub_category_id ?? null,
+        ]);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            $product->hub_product_id = $data['product_id']
+                ?? $data['data']['id']
+                ?? $data['data']['product_id']
+                ?? null;
+
+            $product->is_visible = true;
+            $product->save();
+
+            Log::info('Response dari Hub:', $data);
+
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Produk berhasil disinkronkan ke Hub.',
+                'data' => $data,
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengirim produk ke Hub.',
+                'error' => $response->body()
+            ], 500);
+        }
+    }
+
+    public function sync(Product $product)
+    {
+        $hubApiUrl = rtrim(env('HUB_API_URL'), '/') . '/product/sync';
+
+        $response = Http::post($hubApiUrl, [
+            'client_id' => env('HUB_CLIENT_ID'),
+            'client_secret' => env('HUB_CLIENT_SECRET'),
+            'seller_product_id' => (string) $product->id,
             'name' => $product->name,
             'description' => $product->description,
             'price' => $product->price,
             'stock' => $product->stock,
-            'category_id' => $product->category->hub_category_id ?? null, // Pastikan kategori juga disinkronkan dan punya ID Hub
-            'is_visible' => $product->is_visible,
             'sku' => $product->sku,
             'image_url' => $product->image_url,
             'weight' => $product->weight,
-            // ... tambahkan data lain yang dibutuhkan Hub
-        ];
-        try {
-            DB::beginTransaction();
-            $hubResponse = $this->hubApiService->createProduct($productData);
-            // Simpan ID produk dari Hub ke database lokal Anda
-            $product->hub_product_id = $hubResponse['product_id']; // Sesuaikan dengan key response dari Hub
+            'is_active' => $product->is_visible ? true : false,
+            'category_id' => (string) ($product->category->hub_category_id ?? ''),
+        ]);
+
+        if ($response->successful() && isset($response['product_id'])) {
+            $product->hub_product_id = $response['product_id'];
             $product->save();
-            DB::commit();
-            return response()->json([
-                'message' => 'Product synced to Hub successfully.',
-                'hub_product_id' => $product->hub_product_id,
-                'hub_response' => $hubResponse
-            ]);
-        } catch (\GuzzleHttp\Exception\ClientException $e) {
-            DB::rollBack();
-            $statusCode = $e->getCode();
-            $responseBody = json_decode($e->getResponse()->getBody(), true);
-            Log::error("API Hub Client Error during sync: " . $e->getMessage() . " Response: " . json_encode($responseBody));
-            return response()->json(
-                [
-                    'message' => 'Error from Hub API during sync: ' . ($responseBody['message'] ?? 'Unknown error'),
-                    'status' => $statusCode
-                ],
-                $statusCode
-            );
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error("Failed to sync product to Hub: " . $e->getMessage());
-            return response()->json(['message' => 'Failed to sync product to Hub. ' . $e->getMessage()], 500);
+            return redirect()->back()->with('success', 'Produk berhasil disinkronkan ke Hub.');
+        } else {
+            return redirect()->back()->with('error', 'Gagal sinkronisasi. Pesan: ' . $response->body());
         }
     }
 
-    /**
-     * Metode untuk menghapus produk dari Hub.
-     */
     public function deleteProductFromHub(Request $request, Product $product)
     {
         if (empty($product->hub_product_id)) {
             return response()->json(['message' => 'Product ID in Hub is missing. Nothing to delete from Hub.'], 400);
         }
+
         try {
             DB::beginTransaction();
             $hubResponse = $this->hubApiService->deleteProduct($product->hub_product_id);
-            // Opsional: Hapus hub_product_id dari lokal jika produk hanya disembunyikan
-            // atau hapus produk lokal jika ini adalah full delete.
-            $product->hub_product_id = null; // Contoh: Hapus referensi Hub ID
+            $product->hub_product_id = null;
             $product->save();
             DB::commit();
+
             return response()->json([
                 'message' => 'Product deleted from Hub successfully.',
                 'hub_response' => $hubResponse
@@ -170,13 +169,10 @@ class ProductController extends Controller
             $statusCode = $e->getCode();
             $responseBody = json_decode($e->getResponse()->getBody(), true);
             Log::error("API Hub Client Error during delete: " . $e->getMessage() . " Response: " . json_encode($responseBody));
-            return response()->json(
-                [
-                    'message' => 'Error from Hub API during delete: ' . ($responseBody['message'] ?? 'Unknown error'),
-                    'status' => $statusCode
-                ],
-                $statusCode
-            );
+            return response()->json([
+                'message' => 'Error from Hub API during delete: ' . ($responseBody['message'] ?? 'Unknown error'),
+                'status' => $statusCode
+            ], $statusCode);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Failed to delete product from Hub: " . $e->getMessage());
@@ -184,58 +180,46 @@ class ProductController extends Controller
         }
     }
 
-    // // ... metode lain untuk manajemen produk (index, store, update, destroy)
-    // public function index()
-    // {
-    //     $products = Product::with('category')->get();
-    //     return view('products.index', compact('products'));
-    // }
-
-    // public function create()
-    // {
-    //     $categories = Category::all();
-    //     return view('products.create', compact('categories'));
-    // }
-
-    public function sync($id, Request $request)
+    public function syncManual(Request $request)
     {
-        try {
-            $product = Product::with('category')->findOrFail($id);
+        Log::info('SyncManual payload:', $request->all());
 
-            $hubApiUrl = rtrim(env('HUB_API_URL'), '/') . '/product/sync';
+        $request->validate([
+            'client_id' => 'required',
+            'client_secret' => 'required',
+            'seller_product_id' => 'required',
+            'name' => 'required',
+            'description' => 'required',
+            'price' => 'required|numeric',
+            'stock' => 'required|integer',
+            'sku' => 'required',
+            'image_url' => 'required|url',
+            'weight' => 'required|numeric',
+            'is_active' => 'required|boolean',
+            'category_id' => 'required|integer'
+        ]);
 
-            $response = Http::post($hubApiUrl, [
-                'client_id' => env('HUB_CLIENT_ID'),
-                'client_secret' => env('HUB_CLIENT_SECRET'),
-                'seller_product_id' => (string) $product->id,
-                'name' => $product->name,
-                'description' => $product->description,
-                'price' => $product->price,
-                'stock' => $product->stock,
-                'sku' => $product->sku,
-                'image_url' => $product->image_url,
-                'weight' => $product->weight,
-                'is_active' => $product->is_visible ? true : false,
-                'category_id' => (string) ($product->category->hub_category_id ?? ''),
-            ]);
+        $product = Product::updateOrCreate(
+            ['sku' => $request->sku],
+            [
+                'name' => $request->name,
+                'slug' => Str::slug($request->name),
+                'description' => $request->description,
+                'category_id' => $request->category_id,
+                'price' => $request->price,
+                'stock' => $request->stock,
+                'sku' => $request->sku,
+                'image_url' => $request->image_url,
+                'weight' => $request->weight,
+                'is_visible' => $request->is_active,
+            ]
+        );
 
-            Log::info('Sync Status: ' . $response->status());
-            Log::info('Sync Body: ' . $response->body());
-
-
-            // Tambahkan ini untuk menampilkan isi respon API
-            dd([
-                'status' => $response->status(),
-                'body' => $response->body(),
-                'json' => $response->json(),
-            ]);
-
-            // ...
-        } catch (\Exception $e) {
-            dd($e->getMessage()); // tampilkan errornya
-        }
-
-        return redirect()->back();
+        return response()->json([
+            'success' => true,
+            'message' => 'Produk disimpan ke database lokal.',
+            'data' => $product
+        ]);
     }
 
     public function create()
@@ -243,7 +227,6 @@ class ProductController extends Controller
         $categories = Category::all();
         return view('products.create', compact('categories'));
     }
-
 
     public function store(Request $request)
     {
@@ -262,6 +245,7 @@ class ProductController extends Controller
         $imageUrl = null;
 
         if ($request->hasFile('image')) {
+            // ✅ Bagian ini yang kamu maksud
             $imagePath = $request->file('image')->store('products', 'public');
             $imageUrl = asset('storage/' . $imagePath);
         }
@@ -275,12 +259,13 @@ class ProductController extends Controller
             'stock'       => $request->stock,
             'sku'         => $request->sku,
             'weight'      => $request->weight,
-            'image_url'   => $imageUrl,
+            'image_url'   => $imageUrl, // ⬅️ Disimpan di database
             'is_visible'  => $request->has('is_visible'),
         ]);
 
         return redirect()->route('products.index')->with('success', 'Produk berhasil ditambahkan.');
     }
+
 
     public function edit(Product $product)
     {
