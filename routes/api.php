@@ -11,6 +11,6 @@ Route::put('/products/{product}/toggle-visibility', [ProductController::class, '
 Route::post('/products/{product}/sync-to-hub', [ProductController::class, 'sync']); // ← Ganti ini
 Route::delete('/products/{product}/delete-from-hub', [ProductController::class, 'deleteProductFromHub']);
 
-Route::middleware('auth')->group(function () {
+Route::middleware('auth')->group(   function () {
     // tambahkan route lain yang butuh auth di sini jika perlu
 });

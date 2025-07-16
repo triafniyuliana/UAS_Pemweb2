@@ -61,7 +61,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('products', ProductController::class);
     Route::resource('orders', OrderController::class);
 
-    Route::post('products/sync/{id}', [ProductController::class, 'sync'])->name('products.sync');
+    Route::post('products/sync/{id}', [ProductController::class, 'sync'])->name('products.sync'); 
     Route::post('category/sync/{id}', [CategoryController::class, 'sync'])->name('category.sync');
 
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');

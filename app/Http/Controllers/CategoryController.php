@@ -84,8 +84,8 @@ class CategoryController extends Controller
 
         try {
             $response = Http::post('https://api.phb-umkm.my.id/api/product-category/sync', [
-                'client_id' => env('CLIENT_ID'),
-                'client_secret' => env('CLIENT_SECRET'),
+                'client_id' => env('client_26WPe0JJAUnF'),
+                'client_secret' => env('BxjF0lgf3Ps1djhFwQ5OTwFXCRKZ12AowtknTrxq'),
                 'seller_product_category_id' => (string) $category->id,
                 'name' => $category->name,
                 'description' => $category->description,

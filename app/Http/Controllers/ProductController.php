@@ -199,29 +199,42 @@ class ProductController extends Controller
 
     public function sync($id, Request $request)
     {
-        $product = Product::findOrFail($id);
+        try {
+            $product = Product::with('category')->findOrFail($id);
 
-        $response = Http::post('https://api.phb-umkm.my.id/api/product/sync', [
-            'client_id' => env('CLIENT_ID'),
-            'client_secret' => env('CLIENT_SECRET'),
-            'seller_product_id' => (string) $product->id,
-            'name' => $product->name,
-            'description' => $product->description,
-            'price' => $product->price,
-            'stock' => $product->stock,
-            'sku' => $product->sku,
-            'image_url' => $product->image_url,
-            'weight' => $product->weight,
-            'is_active' => $request->is_active == 1 ? false : true,
-            'category_id' => (string) $product->category->hub_category_id,
-        ]);
+            $hubApiUrl = rtrim(env('HUB_API_URL'), '/') . '/product/sync';
 
-        if ($response->successful() && isset($response['product_id'])) {
-            $product->hub_product_id = $request->is_active == 1 ? null : $response['product_id'];
-            $product->save();
+            $response = Http::post($hubApiUrl, [
+                'client_id' => env('HUB_CLIENT_ID'),
+                'client_secret' => env('HUB_CLIENT_SECRET'),
+                'seller_product_id' => (string) $product->id,
+                'name' => $product->name,
+                'description' => $product->description,
+                'price' => $product->price,
+                'stock' => $product->stock,
+                'sku' => $product->sku,
+                'image_url' => $product->image_url,
+                'weight' => $product->weight,
+                'is_active' => $product->is_visible ? true : false,
+                'category_id' => (string) ($product->category->hub_category_id ?? ''),
+            ]);
+
+            Log::info('Sync Status: ' . $response->status());
+            Log::info('Sync Body: ' . $response->body());
+
+
+            // Tambahkan ini untuk menampilkan isi respon API
+            dd([
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'json' => $response->json(),
+            ]);
+
+            // ...
+        } catch (\Exception $e) {
+            dd($e->getMessage()); // tampilkan errornya
         }
 
-        session()->flash('successMessage', 'Product Synced Successfully');
         return redirect()->back();
     }
 
