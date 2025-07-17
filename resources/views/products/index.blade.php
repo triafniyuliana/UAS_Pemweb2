@@ -57,12 +57,14 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-4 border-b">{{ $product->name }}</td>
-                                <td class="py-3 px-4 border-b text-sm">{{ Str::limit($product->description, 50) }}</td>
+                                <td class="py-3 px-4 border-b text-sm">{{ \Illuminate\Support\Str::limit($product->description, 50) }}</td>
                                 <td class="py-3 px-4 border-b">Rp{{ number_format($product->price, 0, ',', '.') }}</td>
                                 <td class="py-3 px-4 border-b">{{ $product->stock }}</td>
                                 <td class="py-3 px-4 border-b">{{ $product->sku ?? '-' }}</td>
                                 <td class="py-3 px-4 border-b">{{ $product->weight ?? '-' }} gr</td>
-                                <td class="py-3 px-4 border-b text-green-600 font-semibold">Yes</td>
+                                <td class="py-3 px-4 border-b text-green-600 font-semibold">
+                                    {{ $product->is_visible ? 'Tampil' : 'Tidak' }}
+                                </td>
                                 <td class="py-3 px-4 border-b">
                                     <form id="sync-product-{{ $product->id }}" action="{{ route('products.sync', $product->id) }}" method="POST">
                                         @csrf

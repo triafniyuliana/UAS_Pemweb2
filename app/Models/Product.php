@@ -17,7 +17,7 @@ class Product extends Model
         'price',
         'stock',
         'sku',
-        'image_url',
+        'image',
         'weight',
         'is_visible',      // Status tampil di lokal
         'hub_product_id',  // ID produk dari Hub

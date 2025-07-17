@@ -18,7 +18,6 @@ class OrderController extends Controller
 
 public function receiveFromHub(Request $request)
 {
-    // Validasi struktur data dasar
     $validated = $request->validate([
         'order_number' => 'required|string',
         'total_amount' => 'required|numeric',
@@ -32,8 +31,7 @@ public function receiveFromHub(Request $request)
         'items.*.quantity' => 'required|integer',
         'items.*.price' => 'required|numeric',
     ]);
-
-    // Simpan ke database
+    
     $order = \App\Models\Order::create([
         'order_number' => $validated['order_number'],
         'total_amount' => $validated['total_amount'],

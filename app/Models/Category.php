@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+
 
 class Category extends Model
 {
-    use HasFactory;
+    protected $table = 'categories';
 
     protected $fillable = [
+        'id',
         'name',
         'slug',
         'is_visible',        // Status tampil di lokal (jika ada)
@@ -18,15 +20,12 @@ class Category extends Model
         'is_active',
         'hub_category_id'
     ];
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
 
     /**
      * Relasi ke produk (1 kategori memiliki banyak produk)
      */
     public function products()
     {
-        return $this->hasMany(Product::class);
+        return $this->hasMany(Product::class, 'category_id');
     }
 }

@@ -38,7 +38,13 @@ class ProductController extends Controller
         ]);
 
         $data = $request->only([
-            'name', 'description', 'price', 'stock', 'sku', 'weight', 'category_id'
+            'name',
+            'description',
+            'price',
+            'stock',
+            'sku',
+            'weight',
+            'category_id'
         ]);
 
         $data['slug'] = Str::slug($data['name']);

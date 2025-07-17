@@ -20,8 +20,7 @@ class CustomerAuthController extends Controller
         if (Auth::guard('customer')->attempt($credentials)) {
             $request->session()->regenerate();
 
-            // Redirect ke halaman beranda setelah login
-            return redirect()->route('store.index'); // Sesuai route beranda kamu
+            return redirect()->route('store.index'); 
         }
 
         return back()->with('error', 'Email atau password salah');
@@ -34,11 +33,8 @@ class CustomerAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        // Redirect ke halaman beranda store.index setelah logout
         return redirect()->route('store.index');
     }
-
-
 
     public function showLoginForm()
     {

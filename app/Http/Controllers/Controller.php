@@ -12,7 +12,6 @@ class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
-    // Fungsi bantu logging global
     protected function logActivity($message, $context = [])
     {
         Log::info("[Activity] " . $message, $context);
