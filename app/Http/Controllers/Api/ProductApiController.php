@@ -16,7 +16,7 @@ class ProductApiController extends Controller
                     $q->where('name', $request->category);
                 });
             })
-            ->where('is_visible', true)
+            ->where('is_visibl', true)
             ->get();
 
         return response()->json($products);

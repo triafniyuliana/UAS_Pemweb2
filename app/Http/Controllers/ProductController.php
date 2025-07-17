@@ -129,12 +129,12 @@ class ProductController extends Controller
         $product->is_visible = !$product->is_visible;
         $product->save();
 
-        return redirect()->route('products.index')->with('success', 'Status produk berhasil diubah.');
+        return redirect()->route('products.index')->with('success', 'Status product berhasil diubah.');
     }
 
     public function sync(Request $request, Product $product)
     {
-        $payload = [
+        $response = Http::post('https://api.phb-umkm.my.id/api/product/sync', [
             'client_id' => env('HUB_CLIENT_ID'),
             'client_secret' => env('HUB_CLIENT_SECRET'),
             'seller_product_id' => (string) $product->id,
@@ -142,33 +142,16 @@ class ProductController extends Controller
             'description' => $product->description,
             'price' => $product->price,
             'stock' => $product->stock,
-            'image_url' => $product->image_url,
-            'is_active' => $product->is_visible ? true : false,
+            'image_url' => $product->image ? $product->image : null,
+            'is_active' => $product->is_visible == 1 ? true : false,
             'category_id' => (string) optional($product->category)->hub_category_id,
-        ];
-
-        Log::info('Syncing product to HUB API', $payload);
-
-        $response = Http::post('https://api.phb-umkm.my.id/api/product/sync', $payload);
-
-        Log::info('HUB API Response', [
-            'status' => $response->status(),
-            'body' => $response->body(),
-            'json' => $response->json()
         ]);
 
         if ($response->successful() && isset($response['product_id'])) {
-            $product->hub_product_id = $response['product_id'];
+            $product->hub_product_id = $request->is_visible == 1 ? null : $response['product_id'];
             $product->save();
-
-            return redirect()->route('products.index')->with('success', 'Sinkronisasi produk berhasil.');
         }
 
-        Log::error('Sinkronisasi produk gagal.', [
-            'status' => $response->status(),
-            'body' => $response->body(),
-        ]);
-
-        return redirect()->route('products.index')->with('error', 'Sinkronisasi produk gagal. Periksa log untuk detail.');
+        return redirect()->route('products.index')->with('success', 'Sinkronisasi product berhasil.');
     }
 }
