@@ -4,33 +4,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+
 
 class Product extends Model
 {
     use HasFactory;
 
+    protected $table = 'products';
+
     protected $fillable = [
+        'id',
         'name',
-        'description',
-        'category_id',
         'price',
+        'description',
         'stock',
-        'sku',
         'image',
-        'weight',
-        'is_visible',      
-        'hub_product_id', 
+        'category_id',
+        'is_visible',
+        'hub_product_id'
+
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
-
-    /**
-     * Relasi ke kategori (1 produk milik 1 kategori)
-     */
-    public function category()
-    {
-        return $this->belongsTo(Category::class);
+    public function category(){
+        return $this->belongsTo(Category::class,'category_id');
     }
 }

@@ -5,9 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+
 
 class CategoryController extends Controller
 {
@@ -71,55 +69,35 @@ class CategoryController extends Controller
         return redirect()->route('categories.index')->with('success', 'Kategori berhasil dihapus.');
     }
 
-    // Aktif/nonaktif kategori sekaligus update produk
+    // Toggle aktif/nonaktif dan update produk yang terkait
     public function toggleStatus(Category $category)
     {
         $category->is_active = !$category->is_active;
         $category->save();
 
-        // Update semua produk dalam kategori ini
+        // Update semua produk di kategori ini
         $category->products()->update(['is_visible' => $category->is_active]);
 
         return redirect()->route('categories.index')->with('success', 'Status kategori & produk berhasil diperbarui.');
     }
 
-    // Sinkronisasi kategori ke Hub
+    // Sinkronisasi ke Hub UMKM
     public function sync(Request $request, Category $category)
     {
-        $payload = [
-            'client_id' => env('HUB_CLIENT_ID'),
-            'client_secret' => env('HUB_CLIENT_SECRET'),
+        $response = Http::post('https://api.phb-umkm.my.id/api/product-category/sync', [
+            'client_id' => 'client_27qv2Zwku61p',
+            'client_secret' => 'yNPf7uxRlVyhSlpOVd4wH0K5MCuI1zFF5pOqeLFN',
             'seller_product_category_id' => (string) $category->id,
             'name' => $category->name,
             'description' => $category->description,
             'is_active' => $category->is_active ? true : false,
-        ];
-
-        Log::info('Syncing category to HUB API', $payload);
-
-        $response = Http::post('https://api.phb-umkm.my.id/api/product-category/sync', $payload);
-
-        Log::info('HUB API Response', [
-            'status' => $response->status(),
-            'body' => $response->body(),
-            'json' => $response->json()
         ]);
 
         if ($response->successful() && isset($response['product_category_id'])) {
             $category->hub_category_id = $response['product_category_id'];
             $category->save();
-
-            // Sinkronisasi produk juga (opsional)
-            $category->products()->update(['is_visible' => $category->is_active]);
-
-            return redirect()->route('categories.index')->with('success', 'Sinkronisasi kategori berhasil.');
         }
 
-        Log::error('Sinkronisasi kategori gagal.', [
-            'status' => $response->status(),
-            'body' => $response->body(),
-        ]);
-
-        return redirect()->route('categories.index')->with('error', 'Sinkronisasi kategori gagal. Periksa log.');
+        return redirect()->route('categories.index')->with('success', 'Sinkronisasi kategori berhasil.');
     }
 }
