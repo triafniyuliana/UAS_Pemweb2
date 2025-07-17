@@ -21,7 +21,7 @@
                     <div>
                         <label for="category_id" class="block mb-1 font-semibold">Kategori</label>
                         <select name="category_id" id="category_id"
-                            class="w-full border border-gray-300 rounded px-3 py-2" required>
+                            class="w-full border border-gray-300 rounded px-3 py-2">
                             <option value="">-- Pilih Kategori --</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
@@ -75,18 +75,9 @@
                     </div>
                 </div>
 
-                {{-- Tampilkan di toko --}}
-                <div class="mt-4">
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" name="is_visible" {{ old('is_visible', true) ? 'checked' : '' }}
-                            class="form-checkbox">
-                        <span class="ml-2">Tampilkan di toko</span>
-                    </label>
-                </div>
-
-                <div class="pt-6 flex justify-end">
+                <div class="pt-6">
                     <button type="submit"
-                        class="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 transition">
+                        class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">
                         Simpan Produk
                     </button>
                     <a href="{{ route('products.index') }}" class="ml-4 text-gray-600 hover:underline">Batal</a>

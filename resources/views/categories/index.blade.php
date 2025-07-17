@@ -1,73 +1,63 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Kategori') }}
+            {{ __('Tambah Kategori') }}
         </h2>
     </x-slot>
 
     <div class="py-12 px-6">
-        @if(session('success'))
-        <div class="mb-4 text-green-600 font-semibold">{{ session('success') }}</div>
-        @endif
+        <!-- Container full width -->
+        <div class="bg-white p-8 rounded shadow w-full mx-auto">
+            @if(session('success'))
+                <div class="mb-4 text-green-600 font-semibold">{{ session('success') }}</div>
+            @endif
 
-        <div class="bg-white p-6 rounded shadow">
-            <a href="{{ route('categories.create') }}" class="btn btn-primary mb-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Tambah Kategori
-            </a>
+            <form action="{{ route('categories.store') }}" method="POST">
+                @csrf
 
-            <table class="table-auto w-full border border-collapse border-gray-300">
-                <thead>
-                    <tr class="bg-gray-100 text-sm text-gray-700">
-                        <th class="border px-4 py-2">Nama Kategori</th>
-                        <th class="border px-4 py-2">Deskripsi</th>
-                        <th class="border px-4 py-2">Status</th>
-                        <th class="border px-4 py-2">Sinkron</th>
-                        <th class="border px-4 py-2">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($categories as $category)
-                    <tr class="text-sm">
-                        <td class="border px-4 py-2 font-semibold">{{ $category->name }}</td>
-                        <td class="border px-4 py-2 text-gray-600">{{ $category->description ?? '-' }}</td>
+                {{-- Nama Kategori --}}
+                <div class="mb-6">
+                    <label class="block mb-1 font-semibold" for="name">Nama Kategori</label>
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value="{{ old('name') }}"
+                        required
+                        class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                    @error('name')
+                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
 
-                        {{-- Status --}}
-                        <td class="border px-4 py-2 text-center">
-                            <form action="{{ route('categories.toggleStatus', $category->id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="px-3 py-1 rounded text-white {{ $category->is_active ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' }}">
-                                    {{ $category->is_active ? 'Aktif' : 'Nonaktif' }}
-                                </button>
-                            </form>
-                        </td>
+                {{-- Deskripsi --}}
+                <div class="mb-6">
+                    <label class="block mb-1 font-semibold" for="description">Deskripsi</label>
+                    <textarea
+                        id="description"
+                        name="description"
+                        rows="4"
+                        class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >{{ old('description') }}</textarea>
+                    @error('description')
+                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
 
-                        {{-- Sinkronisasi --}}
-                        <td class="border px-4 py-2 text-center">
-                            <form action="{{ route('categories.sync', $category) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="px-3 py-1 rounded text-white bg-green-600 hover:bg-green-700">
-                                    Sinkronkan
-                                </button>
-                            </form>
-                        </td>
-
-                        {{-- Aksi --}}
-                        <td class="border px-4 py-2 whitespace-nowrap">
-                            <a href="{{ route('categories.edit', $category->id) }}" class="text-blue-600 hover:underline mr-2">Edit</a>
-                            <form action="{{ route('categories.destroy', $category->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin hapus kategori ini?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:underline">Hapus</button>
-                            </form>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="text-center py-4 text-gray-600">Belum ada data kategori.</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                {{-- Tombol --}}
+                <div class="flex justify-start items-center">
+                    <button
+                        type="submit"
+                        class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
+                    >
+                        Simpan
+                    </button>
+                    <a href="{{ route('categories.index') }}" class="ml-4 text-gray-600 hover:underline">
+                        Batal
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
 </x-app-layout>
