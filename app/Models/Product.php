@@ -11,7 +11,6 @@ class Product extends Model
 
     protected $fillable = [
         'name',
-        'slug',
         'description',
         'category_id',
         'price',
@@ -19,8 +18,8 @@ class Product extends Model
         'sku',
         'image',
         'weight',
-        'is_visible',      // Status tampil di lokal
-        'hub_product_id',  // ID produk dari Hub
+        'is_visible',      
+        'hub_product_id', 
     ];
 
     protected $casts = [
