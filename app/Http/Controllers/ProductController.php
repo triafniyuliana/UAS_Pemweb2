@@ -147,6 +147,7 @@ class ProductController extends Controller
             'category_id' => (string) optional($product->category)->hub_category_id,
         ]);
 
+        // Final
         if ($response->successful() && isset($response['product_id'])) {
             $product->hub_product_id = $request->is_visible == 1 ? null : $response['product_id'];
             $product->save();
