@@ -14,7 +14,7 @@
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center space-x-2">
                     <i class="fas fa-shopping-bag text-white text-2xl"></i>
-                    <h1 class="text-2xl font-bold text-white">Lux<span class="font-light">Bag</span></h1>
+                    <h1 class="text-2xl font-bold text-white">Tas<span class="font-light">Mu</span></h1>
                 </div>
                 <div class="flex items-center space-x-6">
                     <a href="#" class="text-white hover:text-gray-200 transition duration-300">

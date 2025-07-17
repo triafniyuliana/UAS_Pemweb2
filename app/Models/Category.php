@@ -12,10 +12,13 @@ class Category extends Model
     protected $fillable = [
         'name',
         'slug',
-        'is_visible', 
-        'hub_category_id'
+        'is_visible',        // Status tampil di lokal (jika ada)
+        'hub_category_id',   // ID kategori dari Hub
     ];
 
+    /**
+     * Relasi ke produk (1 kategori memiliki banyak produk)
+     */
     public function products()
     {
         return $this->hasMany(Product::class);

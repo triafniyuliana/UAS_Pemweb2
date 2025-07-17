@@ -78,7 +78,7 @@
                 {{-- Tampilkan di toko --}}
                 <div class="mb-4">
                     <label>
-                        <input type="checkbox" name="is_visible" {{ old('is_visible', true) ? 'checked' : '' }}>
+                        <!-- <input type="checkbox" name="is_visible" {{ old('is_visible', true) ? 'checked' : '' }}> -->
                         Tampilkan di toko
                     </label>
                 </div>

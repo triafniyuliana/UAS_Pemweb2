@@ -80,27 +80,18 @@ class CategoryController extends Controller
     {
         $category = Category::findOrFail($id);
 
-        Log::info('Memulai sinkronisasi kategori', ['id' => $category->id]);
+        $response = Http::post('https://api.phb-umkm.my.id/api/product-category/sync', [
+            'client_id' => env('CLIENT_ID'),
+            'client_secret' => env('CLIENT_SECRET'),
+            'seller_product_category_id' => (string) $category->id,
+            'name' => $category->name,
+            'description' => $category->description,
+            'is_active' => $request->is_active == 1 ? false : true,
+        ]);
 
-        try {
-            $response = Http::post('https://api.phb-umkm.my.id/api/product-category/sync', [
-                'client_id' => env('client_26WPe0JJAUnF'),
-                'client_secret' => env('BxjF0lgf3Ps1djhFwQ5OTwFXCRKZ12AowtknTrxq'),
-                'seller_product_category_id' => (string) $category->id,
-                'name' => $category->name,
-                'description' => $category->description,
-                'is_active' => $request->is_active == 1 ? false : true,
-            ]);
-
-            if ($response->successful() && isset($response['product_category_id'])) {
-                $category->hub_category_id = $request->is_active == 1 ? null : $response['product_category_id'];
-                $category->save();
-                Log::info('Sinkronisasi kategori berhasil', ['id' => $category->id, 'hub_id' => $category->hub_category_id]);
-            } else {
-                Log::warning('Sinkronisasi kategori gagal (tidak sukses atau tanpa product_category_id)', ['id' => $category->id, 'response' => $response->body()]);
-            }
-        } catch (\Exception $e) {
-            Log::error('Gagal sinkronisasi kategori', ['id' => $category->id, 'error' => $e->getMessage()]);
+        if ($response->successful() && isset($response['product_category_id'])) {
+            $category->hub_category_id = $request->is_active == 1 ? null : $response['product_category_id'];
+            $category->save();
         }
 
         session()->flash('successMessage', 'Category Synced Successfully');

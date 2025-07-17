@@ -12,19 +12,19 @@ class HubApiService
     protected $clientId;
     protected $clientSecret;
 
-    public function __construct()
-    {
-        $this->baseUrl = env('HUB_API_URL');
-        $this->clientId = env('HUB_CLIENT_ID');
-        $this->clientSecret = env('HUB_CLIENT_SECRET');
-        $this->client = new Client([
-            'base_uri' => $this->baseUrl,
-            'headers' => [
-                'Accept' => 'application/json',
-            ],
-            'verify' => false, // Hanya untuk pengembangan lokal
-        ]);
-    }
+    // public function __construct()
+    // {
+    //     $this->baseUrl = env('HUB_API_URL');
+    //     $this->clientId = env('HUB_CLIENT_ID');
+    //     $this->clientSecret = env('HUB_CLIENT_SECRET');
+    //     $this->client = new Client([
+    //         'base_uri' => $this->baseUrl,
+    //         'headers' => [
+    //             'Accept' => 'application/json',
+    //         ],
+    //         'verify' => false, // Hanya untuk pengembangan lokal
+    //     ]);
+    // }
 
     /**
      * Mendapatkan token akses dari Hub.
@@ -90,7 +90,12 @@ class HubApiService
                 'json' => $data,
             ]);
 
-            return json_decode((string) $response->getBody(), true);
+            $responseData = json_decode((string) $response->getBody(), true);
+
+            // Tambahkan log/cek response
+            Log::info('Response dari Hub (createProduct): ', $responseData);
+
+            return $responseData;
         } catch (\GuzzleHttp\Exception\ClientException $e) {
             Log::error('Client Error saat membuat produk: ' . $e->getMessage());
             throw $e;

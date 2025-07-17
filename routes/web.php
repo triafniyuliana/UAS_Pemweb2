@@ -25,7 +25,6 @@ Route::get('/cart/checkout', [CartController::class, 'showCheckoutForm'])->name(
 Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
 Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 
-
 // ------------------------------
 // Halaman Welcome (Opsional)
 // ------------------------------
@@ -47,6 +46,7 @@ Route::post('/login', [LoginController::class, 'login']);
 
 Route::middleware(['auth'])->group(function () {
 
+    // Dashboard
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->middleware(['verified'])->name('dashboard');
@@ -61,14 +61,28 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('products', ProductController::class);
     Route::resource('orders', OrderController::class);
 
-    Route::post('/products/sync/{id}', [ProductController::class, 'syncProductToHub'])->name('products.sync');
-    Route::post('category/sync/{id}', [CategoryController::class, 'sync'])->name('category.sync');
+    // ✅ Sinkronisasi Produk ke Hub (gunakan tombol ON/OFF di web)
+    Route::post('/products/{id}/sync', [ProductController::class, 'sync'])->name('products.sync');
 
+    // ✅ Sinkronisasi Kategori ke Hub (jika pakai tombol)
+    Route::post('/category/sync/{id}', [CategoryController::class, 'sync'])->name('category.sync');
+
+    // ✅ (Jika masih pakai fitur visibilitas lokal — tapi kamu sekarang tidak pakai)
+    // Hapus route ini kalau sudah tidak gunakan `is_visible` untuk toggle
+    // Route::post('/products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility'])->name('products.toggleVisibility');
+
+    // Pesanan
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::post('/orders/manual', [OrderController::class, 'storeFromLocal'])->name('orders.storeFromLocal');
     Route::post('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
 });
 
+Route::get('/test-env', function () {
+    return response()->json([
+        'CLIENT_ID' => env('CLIENT_ID'),
+        'CLIENT_SECRET' => env('CLIENT_SECRET'),
+    ]);
+});
 
 // ------------------------------
 // Autentikasi Laravel (register, dll)

@@ -4,17 +4,17 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 
-// ✅ Untuk menerima order dari Hub (Webhook)
+// ✅ Terima order dari HUB
 Route::post('webhook/orders', [OrderController::class, 'receiveOrderFromHub']);
 
-// ✅ Untuk sinkronisasi manual dari Hub ke Lokal
+// ✅ Sinkron dari Hub ke Lokal (Webhook)
 Route::post('/product/sync', [ProductController::class, 'syncManual']);
 
-// ✅ Sinkronisasi produk lokal ke Hub → DIBUKA tanpa auth agar tombol bisa diakses
+// ✅ Sinkronisasi produk dari Lokal ke Hub
 Route::post('/products/{id}/sync-to-hub', [ProductController::class, 'syncProductToHub']);
 
-// ✅ Fitur yang butuh autentikasi (optional)
-Route::middleware('auth')->group(function () {
-    Route::put('/products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility']);
-    Route::delete('/products/{product}/delete-from-hub', [ProductController::class, 'deleteProductFromHub']);
-});
+// ✅ Toggle status lokal tanpa autentikasi (agar fetch JS bisa)
+Route::put('/products/{product}/toggle-visibility', [ProductController::class, 'toggleVisibility']);
+
+// ✅ Hapus produk dari Hub
+Route::delete('/products/{product}/delete-from-hub', [ProductController::class, 'deleteProductFromHub']);

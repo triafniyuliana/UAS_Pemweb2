@@ -16,15 +16,15 @@ class Product extends Model
         'category_id',
         'price',
         'stock',
-        'sku',             
-        'image_url',       
-        'weight',  
-        'is_visible',
-        'hub_product_id'
+        'sku',
+        'image_url',
+        'weight',
+        'is_visible',      // Status tampil di lokal
+        'hub_product_id',  // ID produk dari Hub
     ];
 
     /**
-     * Relasi ke kategori (opsional jika kamu punya model Category)
+     * Relasi ke kategori (1 produk milik 1 kategori)
      */
     public function category()
     {
