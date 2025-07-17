@@ -2,125 +2,61 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
-use App\Services\HubApiService;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
-    protected $hubApiService;
-
-    public function __construct(HubApiService $hubApiService)
-    {
-        $this->hubApiService = $hubApiService;
-    }
-
     public function index()
     {
         $products = Product::with('category')->get();
         return view('products.index', compact('products'));
     }
 
-    public function toggleVisibility(Request $request, Product $product)
+    public function create()
     {
-        $request->validate([
-            'is_on' => 'required|boolean',
-        ]);
-
-        $product->is_visible = $request->is_on;
-        $product->save();
-
-        return response()->json(['message' => 'Status produk berhasil diperbarui']);
+        $categories = Category::all();
+        return view('products.create', compact('categories'));
     }
-
-    public function sync($id, Request $request)
-    {
-        $product = Product::findOrFail($id);
-
-        if ($request->is_active == 1) {
-            // OFF: hapus dari Hub, kosongkan hub_product_id
-            $product->hub_product_id = null;
-            $product->save();
-            session()->flash('successMessage', 'Produk dinonaktifkan dari Hub.');
-        } else {
-            // ON: sinkron ke Hub
-            $response = Http::post('https://api.phb-umkm.my.id/api/product/sync', [
-                'client_id' => env('CLIENT_ID'),
-                'client_secret' => env('CLIENT_SECRET'),
-                'seller_product_id' => (string) $product->id,
-                'name' => $product->name,
-                'description' => $product->description,
-                'price' => $product->price,
-                'stock' => $product->stock,
-                'sku' => $product->sku,
-                'image_url' => $product->image_url,
-                'weight' => $product->weight,
-                'is_active' => true,
-                'category_id' => (string) $product->category->hub_category_id,
-            ]);
-
-            Log::info('CLIENT_ID:', [env('CLIENT_ID')]);
-            Log::info('CLIENT_SECRET:', [env('CLIENT_SECRET')]);
-
-
-            if ($response->successful() && isset($response['product_id'])) {
-                $product->hub_product_id = $response['product_id'];
-                $product->save();
-                session()->flash('successMessage', 'Produk berhasil disinkron ke Hub.');
-            } else {
-                session()->flash('error', 'Gagal sinkronisasi produk ke Hub.');
-            }
-        }
-
-        return redirect()->back();
-    }
-
-
 
     public function store(Request $request)
     {
         $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
-            'category_id' => 'required|exists:categories,id',
-            'price'       => 'required|integer|min:0',
+            'price'       => 'required|numeric|min:0',
             'stock'       => 'required|integer|min:0',
-            'sku'         => 'nullable|string|max:255',
-            'weight'      => 'nullable|numeric',
-            'image'       => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'sku'         => 'nullable|string|max:255|unique:products,sku',
+            'weight'      => 'required|numeric|min:0',
+            'image'       => 'nullable|image|max:2048',
+            'category_id' => 'required|exists:categories,id',
         ]);
 
-        $imageUrl = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('products', 'public');
-            $imageUrl = asset('storage/' . $imagePath);
+        $data = $request->only([
+            'name', 'description', 'price', 'stock', 'sku', 'weight', 'category_id'
+        ]);
+
+        $data['slug'] = Str::slug($data['name']);
+
+        if (empty($data['sku'])) {
+            $data['sku'] = 'TAS-' . strtoupper(uniqid());
         }
 
-        Product::create([
-            'name'        => $request->name,
-            'slug'        => Str::slug($request->name),
-            'description' => $request->description,
-            'category_id' => $request->category_id,
-            'price'       => $request->price,
-            'stock'       => $request->stock,
-            'sku'         => $request->sku,
-            'weight'      => $request->weight,
-            'image_url'   => $imageUrl,
-            'is_visible'  => false,
-        ]);
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('products', 'public');
+        }
+
+        $data['is_visible'] = false;
+        $data['image_url'] = isset($data['image']) ? asset('storage/' . $data['image']) : null;
+
+        Product::create($data);
 
         return redirect()->route('products.index')->with('success', 'Produk berhasil ditambahkan.');
-    }
-
-    public function create()
-    {
-        $categories = \App\Models\Category::all(); // ambil semua kategori untuk dropdown
-        return view('products.create', compact('categories'));
     }
 
     public function edit(Product $product)
@@ -134,48 +70,93 @@ class ProductController extends Controller
         $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
-            'category_id' => 'required|exists:categories,id',
-            'price'       => 'required|integer|min:0',
+            'price'       => 'required|numeric|min:0',
             'stock'       => 'required|integer|min:0',
-            'sku'         => 'nullable|string|max:255',
-            'weight'      => 'nullable|numeric',
-            'image'       => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'sku'         => 'nullable|string|max:255|unique:products,sku,' . $product->id,
+            'weight'      => 'required|numeric|min:0',
+            'image'       => 'nullable|image|max:2048',
+            'category_id' => 'required|exists:categories,id',
         ]);
 
-        $imageUrl = $product->image_url;
-        if ($request->hasFile('image')) {
-            if ($product->image_url) {
-                $oldImage = str_replace(asset('storage/'), '', $product->image_url);
-                Storage::disk('public')->delete($oldImage);
-            }
-            $imagePath = $request->file('image')->store('products', 'public');
-            $imageUrl = asset('storage/' . $imagePath);
+        $data = $request->only([
+            'name', 'description', 'price', 'stock', 'sku', 'weight', 'category_id'
+        ]);
+
+        $data['slug'] = Str::slug($data['name']);
+
+        if (empty($data['sku'])) {
+            $data['sku'] = 'TAS-' . strtoupper(uniqid());
         }
 
-        $product->update([
-            'name'        => $request->name,
-            'slug'        => Str::slug($request->name),
-            'description' => $request->description,
-            'category_id' => $request->category_id,
-            'price'       => $request->price,
-            'stock'       => $request->stock,
-            'sku'         => $request->sku,
-            'weight'      => $request->weight,
-            'image_url'   => $imageUrl,
-            'is_visible'  => $request->has('is_visible'),
-        ]);
+        if ($request->hasFile('image')) {
+            if ($product->image && Storage::disk('public')->exists($product->image)) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $data['image'] = $request->file('image')->store('products', 'public');
+            $data['image_url'] = asset('storage/' . $data['image']);
+        }
+
+        $product->update($data);
 
         return redirect()->route('products.index')->with('success', 'Produk berhasil diperbarui.');
     }
 
     public function destroy(Product $product)
     {
-        if ($product->image_url) {
-            $imageFile = str_replace(asset('storage/'), '', $product->image_url);
-            Storage::disk('public')->delete($imageFile);
+        if ($product->image && Storage::disk('public')->exists($product->image)) {
+            Storage::disk('public')->delete($product->image);
         }
 
         $product->delete();
+
         return redirect()->route('products.index')->with('success', 'Produk berhasil dihapus.');
+    }
+
+    public function toggleStatus(Product $product)
+    {
+        $product->is_visible = !$product->is_visible;
+        $product->save();
+
+        return redirect()->route('products.index')->with('success', 'Status produk berhasil diubah.');
+    }
+
+    public function sync(Request $request, Product $product)
+    {
+        $payload = [
+            'client_id' => env('HUB_CLIENT_ID'),
+            'client_secret' => env('HUB_CLIENT_SECRET'),
+            'seller_product_id' => (string) $product->id,
+            'name' => $product->name,
+            'description' => $product->description,
+            'price' => $product->price,
+            'stock' => $product->stock,
+            'image_url' => $product->image_url,
+            'is_active' => $product->is_visible ? true : false,
+            'category_id' => (string) optional($product->category)->hub_category_id,
+        ];
+
+        Log::info('Syncing product to HUB API', $payload);
+
+        $response = Http::post('https://api.phb-umkm.my.id/api/product/sync', $payload);
+
+        Log::info('HUB API Response', [
+            'status' => $response->status(),
+            'body' => $response->body(),
+            'json' => $response->json()
+        ]);
+
+        if ($response->successful() && isset($response['product_id'])) {
+            $product->hub_product_id = $response['product_id'];
+            $product->save();
+
+            return redirect()->route('products.index')->with('success', 'Sinkronisasi produk berhasil.');
+        }
+
+        Log::error('Sinkronisasi produk gagal.', [
+            'status' => $response->status(),
+            'body' => $response->body(),
+        ]);
+
+        return redirect()->route('products.index')->with('error', 'Sinkronisasi produk gagal. Periksa log untuk detail.');
     }
 }

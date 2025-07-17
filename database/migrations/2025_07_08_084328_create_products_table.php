@@ -13,17 +13,17 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
+            $table->string('hub_product_id')->nullable(); 
             $table->string('name');
-            $table->string('slug')->unique();
+            // $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->unsignedBigInteger('category_id')->nullable();
             $table->integer('price');
             $table->integer('stock');
             $table->string('sku')->nullable();
-            $table->string('image_url')->nullable(); 
+            $table->string('image')->nullable(); 
             $table->decimal('weight', 8, 2)->nullable();
             $table->boolean('is_visible')->default(true);
-            $table->unsignedBigInteger('hub_product_id')->nullable();
             $table->timestamps();
         });
     }

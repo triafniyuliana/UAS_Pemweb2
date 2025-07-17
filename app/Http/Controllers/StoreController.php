@@ -5,55 +5,65 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class StoreController extends Controller
 {
-    // Halaman beranda toko
-    public function index(Request $request)
+    public function beranda()
+    {
+        $categories = Category::where('is_active', true)->get();
+        $products = Product::where('is_visible', true)->latest()->take(6)->get();
+
+        return view('store.beranda', compact('categories', 'products'));
+    }
+
+    public function products(Request $request)
     {
         $query = Product::where('is_visible', true);
 
-        if ($request->filled('kategori')) {
-            $category = Category::where('slug', $request->kategori)->first();
-            if ($category) {
-                Log::info("Filter by category: {$category->name} (ID: {$category->id})");
-                $query->where('category_id', $category->id);
-            }
+        if ($request->filled('category')) {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('name', $request->category);
+            });
         }
 
         if ($request->filled('q')) {
-            Log::info("Search query: " . $request->q);
             $query->where('name', 'like', '%' . $request->q . '%');
         }
 
-        $products = $query->latest()->get();
-        $categories = Category::all();
- 
-        return view('store.beranda', compact('products', 'categories'));
+        $products = $query->latest()->paginate(12);
+
+        return view('store.products', compact('products'));
     }
 
-
-
-    // Detail produk
-    public function show($slug)
+    public function showProduct($id)
     {
-        $product = Product::where('slug', $slug)->where('is_visible', true)->firstOrFail();
-        Log::info("Viewing product detail: {$product->name} (ID: {$product->id})");
+        $product = Product::with('category')->findOrFail($id);
         return view('store.show', compact('product'));
     }
 
-    // Produk berdasarkan kategori
-    public function category($slug)
+    public function categories()
     {
-        $category = Category::where('slug', $slug)->firstOrFail();
-        Log::info("Viewing category page: {$category->name} (ID: {$category->id})");
-
-        $products = $category->products()
-            ->where('is_visible', true)
-            ->latest()
+        $categories = Category::where('is_active', true)
+            ->with(['products' => function ($q) {
+                $q->where('is_visible', true);
+            }])
             ->get();
 
-        return view('store.category', compact('category', 'products'));
+        return view('store.categories', compact('categories'));
+    }
+
+    public function contact()
+    {
+        return view('store.contact');
+    }
+
+    public function productsByCategory($name)
+    {
+        $category = Category::where('name', $name)->firstOrFail();
+        $products = Product::whereHas('category', function ($q) use ($name) {
+            $q->where('name', $name);
+        })->where('is_visible', true)->latest()->paginate(12);
+
+        return view('store.products-by-category', compact('products', 'category'));
     }
 }

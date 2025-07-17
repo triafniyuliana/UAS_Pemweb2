@@ -44,7 +44,7 @@ class HubApiService
             $data = json_decode((string) $response->getBody(), true);
             return $data['access_token'] ?? null;
         } catch (\Exception $e) {
-            dd($e->getMessage());
+            
             Log::error('Gagal mendapatkan token akses dari Hub: ' . $e->getMessage());
             throw new \Exception('Tidak bisa mendapatkan token akses dari Hub');
         }

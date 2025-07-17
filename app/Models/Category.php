@@ -14,6 +14,12 @@ class Category extends Model
         'slug',
         'is_visible',        // Status tampil di lokal (jika ada)
         'hub_category_id',   // ID kategori dari Hub
+        'description',
+        'is_active',
+        'hub_category_id'
+    ];
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     /**

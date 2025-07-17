@@ -23,6 +23,10 @@ class Product extends Model
         'hub_product_id',  // ID produk dari Hub
     ];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
     /**
      * Relasi ke kategori (1 produk milik 1 kategori)
      */

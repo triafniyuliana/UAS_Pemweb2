@@ -7,23 +7,27 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\StoreController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\HomeController;
+use App\Http\Controllers\CustomerAuthController;
 
 // ------------------------------
 // Tampilan Toko (Customer)
 // ------------------------------
 
-Route::get('/', [StoreController::class, 'index'])->name('store.index');
-Route::get('/produk/{slug}', [StoreController::class, 'show'])->name('store.show');
-Route::get('/kategori/{slug}', [StoreController::class, 'category'])->name('store.category');
+Route::get('/', [StoreController::class, 'beranda'])->name('store.index');
+Route::get('/products', [StoreController::class, 'products'])->name('store.products');
+Route::get('/products/{id}', [StoreController::class, 'showProduct'])->name('store.show');
+Route::get('/products/category/{name}', [StoreController::class, 'productsByCategory'])->name('store.products.category');
+Route::get('/contact', [StoreController::class, 'contact'])->name('store.contact');
 
-Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-Route::post('/cart/add/{id}', [CartController::class, 'add'])->name('cart.add');
-Route::post('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
-Route::get('/cart/checkout', [CartController::class, 'showCheckoutForm'])->name('cart.checkout.form');
-Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
-Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+//tampilan login dan register customer
+Route::get('/login-customer', [CustomerAuthController::class, 'showLoginForm']);
+Route::post('/login-customer', [CustomerAuthController::class, 'login']);
+
+Route::get('/register-customer', [CustomerAuthController::class, 'showRegisterForm']);
+Route::post('/register-customer', [CustomerAuthController::class, 'register']);
+
+Route::post('/logout-customer', [CustomerAuthController::class, 'logout'])->name('customer.logout');
+
 
 // ------------------------------
 // Halaman Welcome (Opsional)
@@ -44,7 +48,7 @@ Route::post('/login', [LoginController::class, 'login']);
 // Area Admin (Butuh Login)
 // ------------------------------
 
-Route::middleware(['auth'])->group(function () {
+Route::prefix('admin')->middleware(['auth'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', function () {
@@ -61,6 +65,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('products', ProductController::class);
     Route::resource('orders', OrderController::class);
 
+
     // ✅ Sinkronisasi Produk ke Hub (gunakan tombol ON/OFF di web)
     Route::post('/products/{id}/sync', [ProductController::class, 'sync'])->name('products.sync');
 
@@ -75,6 +80,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::post('/orders/manual', [OrderController::class, 'storeFromLocal'])->name('orders.storeFromLocal');
     Route::post('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+
+    // Sinkronisasi dan toggle status (pastikan sebelum resource!)
+    Route::post('products/{product}/sync', [ProductController::class, 'sync'])->name('products.sync');
+    Route::post('products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggleStatus');
+
+    Route::post('categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('categories.toggleStatus');
+    Route::post('categories/{category}/sync', [CategoryController::class, 'sync'])->name('categories.sync');
 });
 
 Route::get('/test-env', function () {
