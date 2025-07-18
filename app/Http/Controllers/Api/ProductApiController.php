@@ -16,7 +16,7 @@ class ProductApiController extends Controller
                     $q->where('name', $request->category);
                 });
             })
-            ->where('is_visibl', true)
+            ->where('is_visible', true)
             ->get();
 
         return response()->json($products);
@@ -25,7 +25,7 @@ class ProductApiController extends Controller
     public function toggleVisibility($id)
     {
         $product = Product::findOrFail($id);
-        $product->is_activee = !$product->is_active;
+        $product->is_active = !$product->is_active;
         $product->save();
 
         return response()->json([

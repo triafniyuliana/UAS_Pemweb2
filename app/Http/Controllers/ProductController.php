@@ -13,7 +13,8 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::with('category')->get();
+        // Ganti dari get() ke paginate(15)
+        $products = Product::with('category')->paginate(15);
         return view('products.index', compact('products'));
     }
 
@@ -142,9 +143,10 @@ class ProductController extends Controller
         ]);
 
         if ($response->successful() && isset($response['product_id'])) {
-            $product->hub_product_id = $request->is_active== 1 ? null : $response['product_id'];
+            $product->hub_product_id = $product->is_active ? $response['product_id'] : null;
             $product->save();
         }
+
 
         return redirect()->route('products.index')->with('success', 'Sinkronisasi produk berhasil.');
     }

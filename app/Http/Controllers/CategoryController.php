@@ -85,9 +85,10 @@ class CategoryController extends Controller
         ]);
 
         if ($response->successful() && isset($response['product_category_id'])) {
-            $category->hub_category_id = $request->is_active == 1 ? null : $response['product_category_id'];
+            $category->hub_category_id = $category->is_active ? $response['product_category_id'] : null;
             $category->save();
         }
+
 
         return redirect()->route('categories.index')->with('success', 'Sinkronisasi kategori berhasil.');
     }

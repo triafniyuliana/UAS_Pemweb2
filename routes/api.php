@@ -12,7 +12,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Produk (boleh diatur pakai middleware kalau perlu)
 Route::get('/products', [ProductApiController::class, 'index']);
-Route::put('/products/{id}/toggle', [ProductApiController::class, 'toggleActive']);
+Route::put('/products/{id}/toggle', [ProductApiController::class, 'toggleVisibility']);
+
 
 // Order masuk dari Hub (API eksternal)
 Route::post('/order/receive', [OrderController::class, 'receiveFromHub']);
