@@ -146,6 +146,6 @@ class ProductController extends Controller
             $product->save();
         }
 
-        // return redirect()->route('products.index')->with('success', 'Sinkronisasi produk berhasil.');
+        return redirect()->route('products.index')->with('success', 'Sinkronisasi produk berhasil.');
     }
 }
