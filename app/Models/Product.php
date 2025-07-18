@@ -19,11 +19,16 @@ class Product extends Model
         'price',
         'description',
         'stock',
+        'sku',
+        'weight',
         'image',
         'category_id',
-        'is_visible',
+        'is_active',
         'hub_product_id'
+    ];
 
+        protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     public function category(){

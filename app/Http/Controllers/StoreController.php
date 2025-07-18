@@ -11,14 +11,14 @@ class StoreController extends Controller
     public function beranda()
     {
         $categories = Category::where('is_active', true)->get();
-        $products = Product::where('is_visible', true)->latest()->take(6)->get();
+        $products = Product::where('is_active', true)->latest()->take(6)->get();
 
         return view('store.beranda', compact('categories', 'products'));
     }
 
     public function products(Request $request)
     {
-        $query = Product::where('is_visible', true);
+        $query = Product::where('is_active', true);
 
         if ($request->filled('category')) {
             $query->whereHas('category', function ($q) use ($request) {
@@ -45,7 +45,7 @@ class StoreController extends Controller
     {
         $categories = Category::where('is_active', true)
             ->with(['products' => function ($q) {
-                $q->where('is_visible', true);
+                $q->where('is_active', true);
             }])
             ->get();
 
@@ -62,7 +62,7 @@ class StoreController extends Controller
         $category = Category::where('name', $name)->firstOrFail();
         $products = Product::whereHas('category', function ($q) use ($name) {
             $q->where('name', $name);
-        })->where('is_visible', true)->latest()->paginate(12);
+        })->where('is_active', true)->latest()->paginate(12);
 
         return view('store.products-by-category', compact('products', 'category'));
     }

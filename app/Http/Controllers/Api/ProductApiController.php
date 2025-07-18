@@ -25,13 +25,13 @@ class ProductApiController extends Controller
     public function toggleVisibility($id)
     {
         $product = Product::findOrFail($id);
-        $product->is_visible = !$product->is_visible;
+        $product->is_activee = !$product->is_active;
         $product->save();
 
         return response()->json([
             'success' => true,
-            'is_visible' => $product->is_visible,
-            'message' => $product->is_visible ? 'Produk ditampilkan' : 'Produk disembunyikan'
+            'is_active' => $product->is_active,
+            'message' => $product->is_active ? 'Produk ditampilkan' : 'Produk disembunyikan'
         ]);
     }
 

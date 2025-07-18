@@ -53,8 +53,8 @@
                             <td class="border px-4 py-2 text-center">
                                 <form action="{{ route('products.toggleStatus', $product->id) }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="px-3 py-1 rounded text-white {{ $product->is_visible ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' }}">
-                                        {{ $product->is_visible ? 'Aktif' : 'Nonaktif' }}
+                                    <button type="submit" class="px-3 py-1 rounded text-white {{ $product->is_active ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' }}">
+                                        {{ $product->is_active ? 'Aktif' : 'Nonaktif' }}
                                     </button>
                                 </form>
                             </td>

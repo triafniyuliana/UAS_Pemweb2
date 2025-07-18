@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
 
 class ProductController extends Controller
 {
@@ -27,27 +26,25 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name'        => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price'       => 'required|numeric|min:0',
-            'stock'       => 'required|integer|min:0',
-            'sku'         => 'nullable|string|max:255|unique:products,sku',
-            'weight'      => 'required|numeric|min:0',
-            'image'       => 'nullable|image|max:2048',
+            'image' => 'nullable|image|max:2048',
+            'price' => 'required|numeric|min:0',
             'category_id' => 'required|exists:categories,id',
+            'stock' => 'required|integer|min:0',
+            'sku' => 'nullable|string|max:255|unique:products,sku',
+            'weight' => 'required|numeric|min:0',
         ]);
 
         $data = $request->only([
             'name',
             'description',
             'price',
+            'category_id',
             'stock',
             'sku',
             'weight',
-            'category_id'
         ]);
-
-        $data['slug'] = Str::slug($data['name']);
 
         if (empty($data['sku'])) {
             $data['sku'] = 'TAS-' . strtoupper(uniqid());
@@ -57,8 +54,8 @@ class ProductController extends Controller
             $data['image'] = $request->file('image')->store('products', 'public');
         }
 
-        $data['is_visible'] = false;
-        $data['image_url'] = isset($data['image']) ? asset('storage/' . $data['image']) : null;
+        $data['is_active'] = false;
+        $data['hub_product_id'] = null;
 
         Product::create($data);
 
@@ -74,27 +71,25 @@ class ProductController extends Controller
     public function update(Request $request, Product $product)
     {
         $request->validate([
-            'name'        => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price'       => 'required|numeric|min:0',
-            'stock'       => 'required|integer|min:0',
-            'sku'         => 'nullable|string|max:255|unique:products,sku,' . $product->id,
-            'weight'      => 'required|numeric|min:0',
-            'image'       => 'nullable|image|max:2048',
+            'image' => 'nullable|image|max:2048',
+            'price' => 'required|numeric|min:0',
             'category_id' => 'required|exists:categories,id',
+            'stock' => 'required|integer|min:0',
+            'sku' => 'nullable|string|max:255|unique:products,sku,' . $product->id,
+            'weight' => 'required|numeric|min:0',
         ]);
 
         $data = $request->only([
             'name',
             'description',
             'price',
+            'category_id',
             'stock',
             'sku',
             'weight',
-            'category_id'
         ]);
-
-        $data['slug'] = Str::slug($data['name']);
 
         if (empty($data['sku'])) {
             $data['sku'] = 'TAS-' . strtoupper(uniqid());
@@ -105,7 +100,6 @@ class ProductController extends Controller
                 Storage::disk('public')->delete($product->image);
             }
             $data['image'] = $request->file('image')->store('products', 'public');
-            $data['image_url'] = asset('storage/' . $data['image']);
         }
 
         $product->update($data);
@@ -126,10 +120,10 @@ class ProductController extends Controller
 
     public function toggleStatus(Product $product)
     {
-        $product->is_visible = !$product->is_visible;
+        $product->is_active = !$product->is_active;
         $product->save();
 
-        return redirect()->route('products.index')->with('success', 'Status product berhasil diubah.');
+        return redirect()->route('products.index')->with('success', 'Status produk berhasil diubah.');
     }
 
     public function sync(Request $request, Product $product)
@@ -143,16 +137,15 @@ class ProductController extends Controller
             'price' => $product->price,
             'stock' => $product->stock,
             'image_url' => $product->image ? $product->image : null,
-            'is_active' => $product->is_visible == 1 ? true : false,
+            'is_active' => $product->is_active == 1 ? true : false,
             'category_id' => (string) optional($product->category)->hub_category_id,
         ]);
 
-        // Final
         if ($response->successful() && isset($response['product_id'])) {
-            $product->hub_product_id = $request->is_visible == 1 ? null : $response['product_id'];
+            $product->hub_product_id = $request->is_active== 1 ? null : $response['product_id'];
             $product->save();
         }
 
-        return redirect()->route('products.index')->with('success', 'Sinkronisasi product berhasil.');
+        return redirect()->route('products.index')->with('success', 'Sinkronisasi produk berhasil.');
     }
 }
