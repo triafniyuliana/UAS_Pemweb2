@@ -68,10 +68,9 @@ class CategoryController extends Controller
         $category->is_active = !$category->is_active;
         $category->save();
 
-        // Update semua novel yang termasuk dalam kategori ini
-        $category->novels()->update(['is_active' => $category->is_active]);
+        $category->products()->update(['is_active' => $category->is_active]);
 
-        return redirect()->route('categories.index')->with('success', 'Status kategori dan novel di dalamnya berhasil diperbarui.');
+        return redirect()->route('categories.index')->with('success', 'Status kategori dan product di dalamnya berhasil diperbarui.');
     }
 
     public function sync(Request $request, Category $category)
